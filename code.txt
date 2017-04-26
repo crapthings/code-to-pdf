@@ -1,0 +1,4481 @@
+/Users/monsterstep/dev/repos/dashboard-app-maker/.babelrc
+{
+  "plugins": [
+    "transform-decorators-legacy",
+    "transform-class-properties"
+  ]
+}
+/Users/monsterstep/dev/repos/dashboard-app-maker/app.js
+import projects from '/domains/projects'
+import tasks from '/domains/tasks'
+import members from '/domains/members'
+import users from '/domains/users'
+const devUser = {
+  username: 'dev',
+  password: 'dev',
+  name: '开发用户',
+  avatarUrl: faker.internet.avatar(),
+}
+export default {
+  name: '发明家',
+  enableDevMenu: true,
+  defaultFakeSize: 10,
+  lockFixtures: true,
+  defaultUsers: [devUser],
+  domains: [
+    projects,
+    tasks,
+    members,
+  ],
+}
+/Users/monsterstep/dev/repos/dashboard-app-maker/README.md
+# dashboard-app-maker
+### how to run
+```bash
+git clone https://github.com/crapthings/dashboard-app-maker --recursive
+cd dashboard-app-maker
+meteor npm i
+```
+### current project status
+> early preview
+/Users/monsterstep/dev/repos/dashboard-app-maker/package.json
+{
+  "name": "my-meteor-starter",
+  "private": true,
+  "scripts": {
+    "start": "meteor run"
+  },
+  "dependencies": {
+    "ag-grid": "^8.0.0",
+    "ag-grid-enterprise": "^8.0.0",
+    "ag-grid-react": "^8.0.0",
+    "babel-runtime": "^6.23.0",
+    "bcrypt": "^0.8.7",
+    "csv-parser": "^1.11.0",
+    "dot-object": "^1.5.4",
+    "faker": "^3.1.0",
+    "form2js": "^1.0.0",
+    "is_js": "^0.9.0",
+    "lodash": "^4.17.4",
+    "lodash-clean": "^1.0.1",
+    "meteor-node-stubs": "^0.2.6",
+    "moment": "^2.17.1",
+    "object-sizeof": "^1.1.1",
+    "pretty-bytes": "^4.0.2",
+    "randomcolor": "^0.4.4",
+    "react": "^15.4.2",
+    "react-addons-shallow-compare": "^15.4.2",
+    "react-dom": "^15.4.2",
+    "react-komposer": "^1.13.1",
+    "react-mounter": "^1.2.0",
+    "react-virtualized-select": "^2.2.0",
+    "recompose": "^0.20.2",
+    "screenfull": "^3.0.2",
+    "sift": "^3.2.6",
+    "sugar": "^2.0.4",
+    "twix": "^1.1.3"
+  },
+  "devDependencies": {
+    "babel-plugin-add-module-exports": "^0.2.1",
+    "babel-plugin-transform-class-properties": "^6.16.0",
+    "babel-plugin-transform-decorators-legacy": "^1.3.4",
+    "babel-plugin-transform-es2015-modules-umd": "^6.18.0",
+    "babel-preset-latest": "^6.24.0"
+  }
+}
+/Users/monsterstep/dev/repos/dashboard-app-maker/domains/projects.js
+export default {
+  name: 'projects',
+  fields: [
+    {
+      name: 'name',
+      type: String,
+    },
+    {
+      name: 'desc',
+      type: String,
+      'form.type': 'textarea',
+    },
+  ],
+}
+/Users/monsterstep/dev/repos/dashboard-app-maker/domains/tasks.js
+export default {
+  name: 'tasks',
+  fields: [
+    {
+      name: 'name',
+      type: String,
+    },
+    {
+      name: 'text',
+      type: String,
+      'form.type': 'textarea',
+    },
+    {
+      name: 'status',
+      type: String,
+      allowedValues: [
+        '测试1',
+        '测试2',
+        '测试3',
+        '测试4',
+        '测试5',
+      ],
+      defaultValue: '测试1',
+    },
+    {
+      name: 'projectId',
+      type: String,
+      ref: ['one', 'projects', 'project'],
+    },
+  ],
+}
+/Users/monsterstep/dev/repos/dashboard-app-maker/domains/members.js
+export default {
+  name: 'members',
+  fields: [
+    {
+      name: 'name',
+      type: String,
+    },
+    {
+      name: 'projectIds',
+      type: [String],
+      ref: ['many', 'projects', 'projects'],
+    },
+  ],
+}
+/Users/monsterstep/dev/repos/dashboard-app-maker/domains/users.js
+export default {
+  label: '人员',
+  name: 'users',
+  icon: 'fa fa-users',
+  isUsers: true,
+  enableFiles: true,
+  fields: [
+    {
+      label: '姓名',
+      name: 'name',
+      type: String,
+      optional: true,
+      row: 1,
+      fake: faker.name.findName,
+    },
+    {
+      label: '职位',
+      name: 'job',
+      type: String,
+      optional: true,
+      row: 1,
+      fake: faker.name.jobTitle,
+    },
+    {
+      label: '手机',
+      name: 'mobile',
+      type: String,
+      optional: true,
+      row: 1,
+      fake: faker.phone.phoneNumber,
+    },
+    {
+      label: '人员类型',
+      name: 'type',
+      type: String,
+      optional: true,
+      allowedValues: ['用户', '发明家'],
+      enableFilter: true,
+      'form.type': 'radio',
+    },
+    {
+      label: '所在企业',
+      name: 'organizationId',
+      type: String,
+      optional: true,
+      ref: ['one', 'organizations', 'organization'],
+      'form.type': 'select',
+      labelKey: 'name',
+      row: 3,
+      fake: true,
+    },
+  ],
+}
+/Users/monsterstep/dev/repos/dashboard-app-maker/lib/lib.js
+_ = require('lodash')
+Clean = require('lodash-clean')
+Is = is = require('is_js')
+Dot = dot = require('dot-object')
+Sizeof = sizeof = require('object-sizeof')
+PrettyBytes = prettyBytes = require('pretty-bytes')
+Moment = moment = require('moment')
+require('twix')
+Faker = faker = require('faker')
+React = require('react')
+Component = require('react').Component
+ComposeAll = require('react-komposer').composeAll
+TrackerContainer = Container = require('react-komposer').composeWithTracker
+Mount = mount = require('react-mounter').mount
+Form2js = form2js = require('form2js').form2js
+AppStatusMap = new ReactiveMap()
+CreateApp = InitApp = require('/imports')
+/Users/monsterstep/dev/repos/dashboard-app-maker/lib/main.js
+import app from '/app'
+// Meteor.isClient && console.profile()
+console.time('create app obj')
+export const App = CreateApp(app)
+console.timeEnd('create app obj')
+// Meteor.isClient && console.profileEnd()
+Meteor.isClient && console.log('after create app', App)
+// if (Meteor.isServer) {
+  // import dump from '/server/dump'
+  // dump(App)
+// }
+// _.each(App.domains, ({ name, isCollection, isFiles, query }) => {
+//   console.log(name, query)
+// })
+console.log(2)
+/Users/monsterstep/dev/repos/dashboard-app-maker/lib/utils.js
+Log = function (ctx) {
+  console.log(JSON.stringify(ctx, null, 4))
+}
+PrettySize = function (size) {
+  return PrettyBytes(Sizeof(size))
+}
+/Users/monsterstep/dev/repos/dashboard-app-maker/server/dump.js
+import fs from 'fs'
+import path from 'path'
+import csv from 'csv-parser'
+export default (app) => {
+  const pwd = process.env.PWD + '/dump'
+  fs.readdir(pwd, Meteor.bindEnvironment(function (e, r) {
+    const dumpFiles = _.pullAll(r, ['.DS_Store'])
+    _.each(dumpFiles, dump)
+  }))
+  function dump(file) {
+    const filePath = pwd + '/' + file
+    const fileObj = path.parse(filePath)
+    const { name: collectionName } = fileObj
+    if (collectionName === 'users')
+      app.collections[collectionName].remove({ username: { $ne: 'dev' }})
+    else
+      app.collections[collectionName] && app.collections[collectionName].remove({})
+    const insert = Meteor.bindEnvironment(function (data) {
+      if (collectionName === 'users') {
+        const omitFields = _.omit(data, ['email'])
+        const doc = {
+          ...omitFields,
+          _id: data.id,
+          username: data.employeeID,
+          password: data.password,
+        }
+        return Accounts.createUser(doc)
+      }
+      const omitFields = _.omit(data, ['id'])
+      const doc = {
+        _id: data.id,
+        ...omitFields,
+      }
+      app.collections[collectionName] && app.collections[collectionName].insert(doc)
+    })
+    fs.createReadStream(filePath)
+    .pipe(csv({
+      separator: ';',
+    }))
+    .on('data', insert)
+  }
+}
+//
+/Users/monsterstep/dev/repos/dashboard-app-maker/server/startup.js
+// Meteor.startup(function() {
+//   Kadira.connect('oF7C4c63fW2YSzSKo', '043003e4-88ad-4f74-bd0a-3e1bd776adf6')
+// })
+/Users/monsterstep/dev/repos/dashboard-app-maker/client/head.js
+DocHead.setTitle('Dashboard App Maker')
+/Users/monsterstep/dev/repos/dashboard-app-maker/client/startup.js
+import screenfull from 'screenfull'
+import {
+  toggler as helpComponentToggler
+} from '/imports/components/layout/help'
+Meteor.startup(function () {
+  $('body').on('keyup', function (e) {
+    if (e.keyCode === 27) {
+      AppStatusMap.clear()
+      helpComponentToggler.clear()
+    }
+  })
+  $(document).on(screenfull.raw.fullscreenchange, (evt) => {
+    console.log(evt.target.style.position, evt)
+    if (evt.target.style.position === '')
+      evt.target.style.position = 'absolute'
+    else
+     evt.target.style.position = ''
+  })
+})
+/Users/monsterstep/dev/repos/dashboard-app-maker/client/main.js
+// Tracker.autorun(function() {
+//   console.log(Meteor.status())
+// })
+/Users/monsterstep/dev/repos/dashboard-app-maker/client/components/home.js
+// // if (Meteor.isClient)
+// //   import home from '/imports/components/common/files'
+// import App from '/imports/domains'
+// class home extends Component {
+//   onChange(e) {
+//     Files = _.find(App.domains, { name: 'files' }).filesCollection
+//     console.log(_.isArrayLike(e.currentTarget.files))
+//     if (_.isArrayLike(e.currentTarget.files)) {
+//       _.each(e.currentTarget.files, file => {
+//         console.log(file)
+//         const upload = Files.insert({
+//           file: file,
+//           streams: 'dynamic',
+//           chunkSize: 'dynamic'
+//         }, false)
+//         upload.on('start', (e, file) => {
+//           console.log(e, file)
+//         })
+//         upload.on('end', (e, file) => {
+//           console.log(e, file)
+//         })
+//         upload.start()
+//       })
+//     }
+//   }
+//   render() {
+//     return <div>
+//       <input type='file' multiple={true} onChange={this.onChange.bind(this)} />
+//     </div>
+//   }
+// }
+// export default home
+/Users/monsterstep/dev/repos/dashboard-app-maker/client/components/test.js
+// if (Meteor.isServer) return
+// import App from '/imports/domains'
+// if (Meteor.isClient)
+//   import { AgGridComponent } from '/imports/components/common/grid'
+// import { createContainerFromDomain } from '/imports/domains/containers'
+// const Projects = Meteor.isClient && Container(createContainerFromDomain('projects'))(AgGridComponent)
+// export default Projects
+/Users/monsterstep/dev/repos/dashboard-app-maker/client/meteor-ui-flex-stylus/ui-flex.styl
+.ui-flex
+  display flex
+.ui-flex-row
+.ui-flex-column
+.ui-flex-center
+  &:not(.ui-flex)
+    display flex
+.ui-flex-fhvp
+.ui-flex-fit-height-vp
+.ui-flex-fit-height-viewport
+.ui-flex-height
+  height 100vh
+.ui-flex-row
+  flex-flow row nowrap
+.ui-flex-column
+  flex-flow column nowrap
+.ui-flex-reverse:not(.ui-flex-column)
+  flex-direction row-reverse
+.ui-flex-column.ui-flex-reverse
+  flex-direction column-reverse
+.ui-flex-center
+  display flex
+  justify-content center
+  align-items center
+.ui-flex-center-x:not(.ui-flex-column)
+  justify-content center
+.ui-flex-center-y:not(.ui-flex-column)
+  align-items center
+.ui-flex-column.ui-flex-center-x
+  align-items center
+.ui-flex-column.ui-flex-center-y
+  justify-content center
+.ui-flex-left:not(.ui-flex-column)
+.ui-flex-row.ui-flex-left
+  justify-content flex-start
+.ui-flex-right:not(.ui-flex-column)
+.ui-flex-row.ui-flex-right
+  justify-content flex-end
+.ui-flex-top:not(.ui-flex-column)
+.ui-flex-row.ui-flex-top
+  align-items flex-start
+.ui-flex-bottom:not(.ui-flex-column)
+.ui-flex-row.ui-flex-bottom
+  align-items flex-end
+.ui-flex-column.ui-flex-left
+  align-items flex-start
+.ui-flex-column.ui-flex-right
+  align-items flex-end
+.ui-flex-column.ui-flex-top
+  justify-content flex-start
+.ui-flex-column.ui-flex-bottom
+  justify-content flex-end
+.ui-flex-scroll
+.ui-flex-scroll-y
+  overflow-y auto
+.ui-flex-scroll-x
+  overflow-x auto
+// flex ratio
+for num in (1...10)
+  .ui-flex-{num}
+    flex num
+// flex wrap
+.ui-flex-wrap
+  flex-wrap wrap
+.ui-flex-wrap-reverse
+  flex-wrap wrap-reverse !important
+.ui-flex-in-row
+.ui-flex-fit-in-row
+  & > div
+    flex 1
+for num in (2...13)
+  .ui-flex-{num}-in-row
+    &:not(.ui-flex-wrap)
+      flex-wrap wrap
+    & > div
+      width (100 / num)%
+//
+.ui-fit-width
+  width 100%
+//
+.ui-flex-center-children
+  & > *
+    justify-content center
+    align-items center
+  & > *:not(.ui-flex)
+    display flex
+// swag scroll
+swagScroll =
+  &::-webkit-scrollbar
+      width 8px
+      height 8px
+  &::-webkit-scrollbar-thumb
+    background-color rgba(0, 0, 0, 0)
+  &::-webkit-scrollbar-thumb:window-inactive
+    display none
+  &:hover
+    &::-webkit-scrollbar-thumb
+      background-color rgba(0, 0, 0, .4)
+.ui-flex-swag-scroll
+.ui-flex-swag-scroll-y
+  overflow-y auto
+  {swagScroll}
+.ui-flex-swag-scroll-x
+  overflow-x auto
+  {swagScroll}
+/Users/monsterstep/dev/repos/dashboard-app-maker/client/styles/loading.css
+.spinner {
+  width: 40px;
+  height: 40px;
+  position: relative;
+  margin: 100px auto;
+}
+.double-bounce1, .double-bounce2 {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background-color: #333;
+  opacity: 0.6;
+  position: absolute;
+  top: 0;
+  left: 0;
+  -webkit-animation: sk-bounce 2.0s infinite ease-in-out;
+  animation: sk-bounce 2.0s infinite ease-in-out;
+}
+.double-bounce2 {
+  -webkit-animation-delay: -1.0s;
+  animation-delay: -1.0s;
+}
+@-webkit-keyframes sk-bounce {
+  0%, 100% { -webkit-transform: scale(0.0) }
+  50% { -webkit-transform: scale(1.0) }
+}
+@keyframes sk-bounce {
+  0%, 100% {
+    transform: scale(0.0);
+    -webkit-transform: scale(0.0);
+  } 50% {
+    transform: scale(1.0);
+    -webkit-transform: scale(1.0);
+  }
+}
+/Users/monsterstep/dev/repos/dashboard-app-maker/client/styles/progress.css
+progress[value]::-webkit-progress-value {
+  background-image: -webkit-linear-gradient(-45deg, transparent 33%, rgba(0, 0, 0, .1) 33%, rgba(0, 0, 0, .1) 66%, transparent 66%), -webkit-linear-gradient(top, rgba(255, 255, 255, .25), rgba(0, 0, 0, .25)), -webkit-linear-gradient(left, #09c, #f44);
+  border-radius: 2px;
+  background-size: 35px 20px, 100% 100%, 100% 100%;
+}
+/Users/monsterstep/dev/repos/dashboard-app-maker/client/styles/style.styl
+@import './ui-common'
+.ui-fixed
+  position fixed
+.ui-href
+  cursor pointer
+.ui-logo
+  font-size $fontSize * 1.2
+  font-weight bold
+// .ui-wrapper-layout
+.ui-help
+  position relative
+  // height 60%
+  height 100vh
+  background-color rgba(10, 0, 0, .9)
+  color white
+  & a
+    color white
+  & .ui-flex-swag-scroll:hover
+    &::-webkit-scrollbar-thumb
+      background-color rgba(255, 255, 255, .4)
+  &::after
+    content ''
+    position absolute
+    z-index -1
+    top 0
+    right 0
+    left 0
+    bottom 0
+    width 100%
+    background url('/images/ui-bg-help.jpg') no-repeat
+    background-size cover
+.ui-help-close
+  position fixed
+  top 0
+  right 0
+.ui-bar-top
+  z-index 800
+  top 0
+  left 0
+  width 100%
+  height $topHeight
+  background-color white
+  color $primaryColor
+  & a
+    color $primaryColor
+.ui-wrapper.ui-padded-top
+  padding-top $topHeight
+.ui-sidebar-left
+  width 120px
+  background-color $primaryColor
+  & > div > a
+    padding 16px 0
+    color #fff
+    &.active
+      background-color white
+      color $primaryColor
+// .ui-wrapper-main
+  // padding 32px
+.ui-breadcrumbs
+  background-color white - 3%
+  padding 0 8px
+  & > nav > *
+    display block
+    padding 8px
+    color white - 60%
+.ui-menu-dev
+  background-color $primaryColor
+  padding 8px
+  & button
+    margin-right 8px
+    padding 8px
+    border 0
+    border-radius 4px
+    background white
+.ui-bar-actions
+  margin-bottom -16px
+  background-color white
+  & a
+    color $primaryColor
+    & i
+      margin-right 4px
+    & small
+      font-size 100%
+.ui-bar-actions-group
+  display flex
+  flex-flow row nowrap
+// .ui-bar-actions-item
+  // width 60px
+  // & small
+    // margin-top 4px
+// modal
+.ui-modal-overlay
+  position fixed
+  z-index 900
+  top 0
+  right 0
+  bottom 0
+  left 0
+  background-color rgba(0, 0, 0, .4)
+.ui-modal-main
+  position absolute
+  z-index 910
+  background-color white
+// .ui-wrapper-domains
+  //
+// .ui-wrapper-grid
+  // background-color white
+.ui-ag-grid
+  flex 1
+.ui-grid-filter
+  padding 16px
+  width 120px
+  // color white
+  // text-align right
+  & a
+    display block
+    &.active
+      background-color $primaryColor
+      color white
+.ag-header-cell
+  text-align left
+.ag-bootstrap .ag-header
+  background-color $primaryColor
+  color white
+.ag-bootstrap .ag-header-cell
+  border-right 1px solid white
+.ui-sep
+  color lightgray
+/Users/monsterstep/dev/repos/dashboard-app-maker/client/styles/ui-common.styl
+$fontSize = 14px
+$space = 16px
+$topHeight = $space * 3
+$primaryColor = #1B98E0
+*
+  margin 0
+  padding 0
+  outline 0
+  box-sizing border-box
+html, body
+  width 100%
+  height 100%
+body
+  font-family 'PingFang SC', 'Helvetica Neue', 'Helvetica', 'STHeitiSC-Light', 'Arial', sans-serif
+  font-size 14px
+  color grey
+a
+  text-decoration none
+  color grey
+#react-root
+  height 100%
+/Users/monsterstep/dev/repos/dashboard-app-maker/client/styles/ui-ag-grid.styl
+.ag-bootstrap .ag-header-icon
+  color white
+  fill @color
+  stroke none
+/Users/monsterstep/dev/repos/dashboard-app-maker/client/styles/ui-form.styl
+@import './ui-common'
+textarea
+  resize none
+.ui-form
+  height 100%
+.ui-form-label
+  display block
+  margin-bottom ($space / 2)
+.ui-form-group
+  display flex
+  margin-bottom $space
+  & > div
+    flex 1
+.ui-form-group
+  & input[type='text']
+  & input[type='password']
+  & input[type='number']
+  & input[type='date']
+  & select
+  & textarea
+    padding 8px
+    width 100%
+    border none
+    background-color white
+    border-bottom 1px solid white - 8%
+    -webkit-appearance none
+    font-size 1em
+    &:focus
+      border-bottom 1px solid $primaryColor
+    &[disabled]
+      cursor pointer
+  & input[type='text']
+  & input[type='password']
+  & input[type='number']
+  & input[type='date']
+  & select
+    height 36px
+  & select
+  & .Select-control
+    border-radius 0
+  & .Select-control
+    outline none
+    border none
+    border-bottom 1px solid white - 8%
+    &:hover
+      box-shadow none
+      outline none
+.is-focused:not(.is-open) > .Select-control
+  border-bottom 1px solid $primaryColor !import
+  box-shadow none !import
+.ui-form-actions
+  text-align right
+  & input[type='submit']
+    padding 8px 16px
+    border 0
+    background-color $primaryColor
+    color white
+.ui-form-field
+  padding 0 8px
+/Users/monsterstep/dev/repos/dashboard-app-maker/client/styles/ui-login.styl
+@import './ui-common'
+.ui-wrapper-login-background
+  background-color $primaryColor - 80%
+.ui-wrapper-login
+  width 640px
+  background-color $primaryColor
+  color white
+.ui-login-meta
+  color white
+.ui-login-form
+  width 384px
+  height (@width)
+  background-color white
+#ui-form-login
+  width 100%
+/Users/monsterstep/dev/repos/dashboard-app-maker/client/styles/ui-modal.styl
+.ui-modal-main
+  padding 16px
+  border-radius 4px
+  box-shadow 4px 4px 16px rgba(0, 0, 0, .3)
+/Users/monsterstep/dev/repos/dashboard-app-maker/client/styles/ui-space.styl
+$size = 16px
+.ui-fit-height
+  height 100%
+.ui-mgr-xs
+  margin-right ($size / 4)
+.ui-mgr-sm
+  margin-right ($size / 2)
+.ui-mgr
+  margin-right $size
+.ui-mgb
+  margin-bottom $size
+.ui-mgl-sm
+  margin-left ($size / 2)
+.ui-padded
+.ui-pd
+  padding $size
+.ui-padded-md
+.ui-pd-md
+  padding $size * 2
+.ui-pdtb
+  padding-top $size
+  padding-bottom @padding-top
+.ui-pdtb-lg
+  padding-top $size * 4
+  padding-bottom @padding-top
+.ui-pd-lr
+  padding 0 ($size * 2)
+/Users/monsterstep/dev/repos/dashboard-app-maker/client/styles/ui-system.styl
+.ui-system-grid
+  & > div:nth-child(odd)
+    & > a:nth-child(odd)
+      background-color white
+    & > a:nth-child(even)
+      background-color whitesmoke
+  & > div:nth-child(even)
+    & > a:nth-child(odd)
+      background-color whitesmoke
+    & > a:nth-child(even)
+      background-color white
+.ui-system-item-empty
+  background-color white !important
+/Users/monsterstep/dev/repos/dashboard-app-maker/client/styles/ui-topbar.styl
+@import './ui-common'
+.ui-topbar-group-right
+  & > *
+    display flex !important
+    padding 0 16px !important
+    width 96px
+    justify-content center
+    align-items center
+    &:hover
+      background-color $primaryColor
+      color white
+  & .react-dropdown-menu
+    box-shadow -4px 4px 8px rgba(0, 0, 0, .1)
+  & .react-dropdown-item
+    background-color white !important
+    color #222 !important
+    &:hover
+      background-color $primaryColor !important
+      color white !important
+/Users/monsterstep/dev/repos/dashboard-app-maker/client/styles/ui-tab.styl
+@import './ui-common'
+.ui-tab-headers
+  border-bottom 1px solid white - 8%
+.ui-tab-headers-item
+  display inline-block
+  padding 8px 16px
+  cursor pointer
+  // background-color white - 3%
+  &.active
+    background-color $primaryColor
+    color white
+.ui-tab-content
+  // background-color white - 8%
+  background-color white
+  padding 16px 0
+/Users/monsterstep/dev/repos/dashboard-app-maker/client/styles/aggrid/ag-grid.styl
+@import 'nib'
+// if we don't do this, then the width and height of the grid would be ignored,
+// as there is no default display for the element ag-grid-a2 (as it's not a natural dom element)
+ag-grid-ng2
+    display inline-block
+.ag-select-agg-func-popup
+    position absolute
+// when we drag the mouse in ag-Grid, this class gets added / removed from the body, so that
+// the mouse isn't selecting text when dragging.
+.ag-body-no-select
+    user-select none
+.ag-root
+    /* set to relative, so absolute popups appear relative to this */
+    position relative
+    box-sizing border-box
+    /* was getting some 'should be there' scrolls, this sorts it out */
+    overflow hidden
+.ag-font-style
+    cursor default
+    /* disable user mouse selection */
+    user-select none
+.ag-no-scrolls
+    white-space nowrap
+    display inline-block
+.ag-scrolls
+    height 100%
+.ag-popup-backdrop
+    position fixed
+    left 0px
+    top 0px
+    width 100%
+    height 100%
+.ag-header
+    position absolute
+    top 0px
+    left 0px
+    white-space nowrap
+    box-sizing border-box
+    overflow hidden
+    width 100%
+.ag-pinned-left-header
+    float left
+    box-sizing border-box
+    display inline-block
+    overflow hidden
+    height 100%
+.ag-pinned-right-header
+    float right
+    box-sizing border-box
+    display inline-block
+    overflow hidden
+    height 100%
+.ag-header-viewport
+    box-sizing border-box
+    overflow hidden
+    height 100%
+.ag-scrolls .ag-header-row
+    position absolute
+.ag-scrolls .ag-header-container
+    box-sizing border-box
+    position relative
+    white-space nowrap
+    height 100%
+.ag-no-scrolls .ag-header-container
+    white-space nowrap
+.ag-header-overlay
+    display block
+    position absolute
+.ag-header-cell
+    box-sizing border-box
+    vertical-align bottom
+    text-align center
+    display inline-block
+    height 100%
+    position absolute
+    //float left // safari doesn't align if we don't float
+// the ghost header cell doesn't live inside the grid, it's parent is the body element,
+// so we cannot style using standard themes. hence we break the rules, and style it here
+.ag-dnd-ghost
+    font-size 14px
+    font-family "Helvetica Neue",Helvetica,Arial,sans-serif;
+    position absolute
+    background #e5e5e5
+    border 1px solid black
+    cursor move
+    user-select none
+    box-sizing border-box
+    overflow hidden
+    text-overflow ellipsis
+    padding 3px
+    line-height 1.4
+    //img
+    //    vertical-align: middle;
+    //    border: 0px;
+.ag-dnd-ghost-icon
+    display inline-block
+    float left
+    padding-left 2px
+    padding-right 2px
+.ag-dnd-ghost-label
+    display inline-block
+.ag-header-group-cell
+    height 100%
+    display inline-block
+    box-sizing border-box
+    text-overflow ellipsis
+    overflow hidden
+    position absolute
+    //float: left // safari doesn't align if we don't float
+// we needed to have display of table-cell below,
+// as with inline-block, the layout messed up in Safari (not problems in the others).
+.ag-header-group-cell-label
+    //display table-cell
+    text-overflow ellipsis
+    overflow hidden
+.ag-header-cell-label
+    text-overflow ellipsis
+    overflow hidden
+.ag-header-cell-resize
+    height 100%
+    width 4px
+    float right
+    cursor col-resize
+.ag-header-expand-icon
+    padding-left 4px
+.ag-header-cell-menu-button
+    float right
+.ag-overlay-panel
+    display table
+    width 100%
+    height 100%
+    pointer-events none
+.ag-overlay-wrapper
+    display table-cell
+    vertical-align middle
+    text-align center
+.ag-bl-overlay
+    pointer-events none
+    position absolute
+    height 100%
+    width: 100%
+    top 0px
+    left 0px
+.ag-overlay-loading-center {}
+.ag-bl-full-height
+    height 100%
+    overflow auto
+    position relative
+.ag-bl-full-height-west
+    height 100%
+    float left
+.ag-bl-full-height-east
+    height 100%
+    float right
+.ag-bl-full-height-center
+    height 100%
+.ag-bl-normal
+    height 100%
+    position relative
+.ag-bl-normal-center-row
+    height 100%
+    overflow hidden
+.ag-bl-normal-west
+    height 100%
+    float left
+.ag-bl-normal-east
+    height 100%
+    float right
+.ag-bl-normal-center
+    height 100%
+.ag-bl-dont-fill
+    position relative
+.ag-body
+    height 100%
+    width 100%
+    box-sizing border-box
+    position absolute
+.ag-floating-top
+    position absolute
+    left 0px
+    width 100%
+    white-space nowrap
+    box-sizing border-box
+    overflow hidden
+.ag-pinned-left-floating-top
+    float left
+    box-sizing border-box
+    display inline-block
+    overflow hidden
+    height 100%
+.ag-pinned-right-floating-top
+    float right
+    box-sizing border-box
+    display inline-block
+    overflow hidden
+    height 100%
+.ag-floating-top-viewport
+    box-sizing border-box
+    overflow hidden
+    height 100%
+.ag-floating-top-container
+    box-sizing border-box
+    position relative
+    white-space nowrap
+    //height: 100%
+.ag-floating-bottom
+    position absolute
+    left 0px
+    width 100%
+    white-space nowrap
+    box-sizing border-box
+    overflow hidden
+.ag-pinned-left-floating-bottom
+    float left
+    box-sizing border-box
+    display inline-block
+    overflow hidden
+    height 100%
+.ag-pinned-right-floating-bottom
+    float right
+    box-sizing border-box
+    display inline-block
+    overflow hidden
+    height 100%
+.ag-floating-bottom-viewport
+    box-sizing border-box
+    overflow hidden
+    height 100%
+.ag-floating-bottom-container
+    box-sizing border-box
+    position relative
+    white-space nowrap
+    //height 100%
+.ag-pinned-left-cols-viewport
+    float left
+    overflow hidden
+.ag-pinned-left-cols-container
+    display inline-block
+    position relative
+.ag-pinned-right-cols-viewport
+    float right
+    overflow-x hidden
+    overflow-y auto
+.ag-pinned-right-cols-container
+    display inline-block
+    position relative
+.ag-body-viewport-wrapper
+    height 100%
+.ag-body-viewport
+    overflow-x auto
+    overflow-y auto // if we are pinning to the right, overflow y will be hidden
+    height 100%
+.ag-full-width-viewport
+    height 100%
+    width 100%
+    // we want this panel to be on top of the others
+    position absolute
+    top 0px
+    left 0px
+    display inline
+    // because the full width container is an overlay over the rest of the grid, we cannot
+    // have it consume mouse events, otherwise no mouse events would be allowed on the
+    // rest of the grid
+    pointer-events none
+    box-sizing border-box
+    overflow hidden
+.ag-full-width-container
+    // if we don't put this in, the RHS will overflow into the viewports margin,
+    // no idea why, trial and error
+    overflow hidden
+    position relative
+    width 100%
+.ag-floating-bottom-full-width-container
+    height 100%
+    width 100%
+    position absolute
+    top 0px
+    left 0px
+    pointer-events none
+    overflow hidden
+    display inline
+.ag-floating-top-full-width-container
+    height 100%
+    width 100%
+    position absolute
+    top 0px
+    left 0px
+    pointer-events none
+    overflow hidden
+    display inline
+.ag-full-width-row
+    // turn events back on, as we removed them in the parent
+    pointer-events all
+    overflow hidden
+.ag-scrolls .ag-body-container
+    position relative
+    display inline-block
+// for animations, allows rows to slide up and down,
+.ag-row-animation
+    transition top 0.4s, height 0.4s, background-color 0.1s, opacity 0.2s
+.ag-row-no-animation
+    transition background-color 0.1s
+.ag-scrolls .ag-row
+    white-space nowrap
+    position absolute
+    width 100%
+.ag-no-scrolls .ag-row
+//    white-space: nowrap
+    position relative // need at least some position for the cell height to work
+.ag-column-drop
+    width 100%
+    box-sizing border-box
+.ag-column-drop-vertical
+    .ag-column-drop-cell
+        display block
+    .ag-column-drop-empty-message
+        display block
+    .ag-column-drop-cell-button
+        float right
+        line-height 16px
+.ag-column-drop-horizontal
+    white-space: nowrap;
+.ag-cell
+    display inline-block
+    white-space nowrap
+    height 100%
+    box-sizing border-box
+    text-overflow ellipsis
+    overflow hidden
+    // this float was needed for layout in safari, without it, when images were used (eg country flags),
+    // then the layout was broken
+    //float: left
+    position absolute
+// this is used by the animateShowChangeCellRenderer. it is arguable that this belongs in the themes,
+// however it is not tied to color, only placement and visiblity, which is behaviour and not style,
+// thus belongs here, besides it doesn't change wih the themes
+.ag-value-slide-out
+    opacity 1.0
+    margin-right 5px
+    transition opacity 3s, margin-right 3s // as value fades, it also moves to the left via the margin setting
+    transition-timing-function linear
+.ag-value-slide-out-end
+    opacity 0.0
+    margin-right 10px
+.ag-opacity-zero
+    opacity 0.0
+.ag-cell-edit-input
+    width 100%
+    height 100%
+.ag-group-cell-entire-row
+    //position: absolute // took this out because of https://github.com/ceolter/angular-grid/issues/115
+    width: 100%
+    display inline-block
+    white-space nowrap
+    height 100%
+    box-sizing border-box
+    text-overflow ellipsis
+    overflow hidden
+.ag-footer-cell-entire-row
+    //position: absolute // took this out because of https://github.com/ceolter/angular-grid/issues/115
+    width 100%
+    display inline-block
+    white-space nowrap
+    height 100%
+    box-sizing border-box
+    text-overflow ellipsis
+    overflow hidden
+.ag-large .ag-root
+    font-size 20px
+.ag-popup-editor
+    position absolute
+    user-select none
+.ag-menu
+    position absolute
+    user-select none
+.ag-menu-column-select-wrapper
+    width 200px
+    height 300px
+    overflow auto
+.ag-menu-list
+    display table
+    border-collapse collapse
+.ag-menu-option
+    display table-row
+.ag-menu-option-text
+    display table-cell
+.ag-menu-option-shortcut
+    display table-cell
+.ag-menu-option-icon
+    display table-cell
+.ag-menu-option-popup-pointer
+    display table-cell
+.ag-menu-separator
+    display table-row
+.ag-menu-separator-cell
+    display table-cell
+.ag-filter {}
+    //z-index: 100
+.ag-virtual-list-viewport
+    overflow-x auto
+    height 100%
+    width 100%
+.ag-virtual-list-container
+    position relative
+    overflow hidden
+.ag-rich-select
+    outline none
+.ag-rich-select-list
+    width 200px
+    height 200px
+.ag-set-filter-list
+    width 200px
+    height 200px
+.ag-set-filter-item
+    text-overflow ellipsis
+    overflow hidden
+    white-space nowrap
+.ag-virtual-list-item
+    position absolute
+    width 100%;
+.ag-filter-filter
+    width 170px
+    margin 4px
+.ag-filter-select
+    width 110px
+    margin 4px 4px 0px 4px
+.ag-paging-panel {}
+.ag-no-vertical-scroll .ag-scrolls
+    height unset
+.ag-no-vertical-scroll .ag-body
+    height unset
+.ag-no-vertical-scroll .ag-body-viewport-wrapper
+    height unset
+.ag-no-vertical-scroll .ag-body-viewport
+    height unset
+.ag-list-selection
+    user-select none
+    cursor default
+.ag-tool-panel
+    width 200px
+    user-select none
+    cursor default
+    height 100%
+    box-sizing border-box
+    overflow auto
+.ag-column-select-indent
+    display inline-block
+.ag-column-select-column
+    margin-left 14px
+    white-space nowrap
+.ag-column-select-column-group
+    white-space nowrap
+//.ag-column-select-panel
+//    height: 100%;
+//    overflow: auto;
+.ag-hidden
+    display none
+.ag-faded
+    opacity 0.3
+.ag-width-half
+    width 50%
+    display inline-block
+//.ag-tool-panel-container
+//    user-select: none;
+//    cursor: default;
+//    width: 200px;
+// setting shake class to an item will give it a left ot right animation
+// used for the 'left' and 'rigth' arrows when dragging columns and scrolling
+.ag-shake-left-to-right
+    animation-name ag-shake-left-to-right
+    animation-duration 0.2s
+    animation-iteration-count infinite
+    animation-direction alternate
+@keyframes ag-shake-left-to-right
+    from
+        padding-left 6px
+        padding-right 2px
+    to
+        padding-left 2px
+        padding-right 6px
+/Users/monsterstep/dev/repos/dashboard-app-maker/client/styles/aggrid/theme-bootstrap.styl
+
+ag-style = "bootstrap"
+ag-root-font-family = "Helvetica Neue",Helvetica,Arial,sans-serif
+ag-root-font-size = 14px
+ag-scrollbar-background = inherit
+ag-scrollbar-thumb = inherit
+ag-border-1 = none
+ag-border-color-1 = #000
+ag-border-color-2 = #808080
+ag-background-1 = #f6f6f6
+ag-foreground-1 = #000
+ag-header-foreground-1 = #000
+ag-separator-color = #d3d3d3
+ag-cell-focused-border = 2px solid #217346
+ag-cell-no-focus-border-top = 1px solid transparent
+ag-cell-no-focus-border-bottom = 1px solid transparent
+ag-cell-ltr-no-focus-border-right = none
+ag-cell-ltr-no-focus-border-left = 1px solid transparent
+ag-cell-rtl-no-focus-border-right = 1px solid transparent
+ag-cell-rtl-no-focus-border-left = none
+ag-cell-highlight-border = 1px solid darkgreen
+ag-cell-padding = 4px
+ag-row-selected-background-color = powderblue
+ag-row-odd-background-color = #f6f6f6
+ag-row-even-background-color = white
+ag-row-floating-background-color = #f0f0f0
+ag-value-change-delta-up-color = darkgreen
+ag-value-change-delta-down-color = darkred
+ag-value-change-value-highlight-background-color = #cec
+ag-range-selected-color-1 = rgba(120,120,120,0.4)
+ag-range-selected-color-2 = rgba(80,80,80,0.4)
+ag-range-selected-color-3 = rgba(40,40,40,0.4)
+ag-range-selected-color-4 = rgba(0,0,0,0.4)
+ag-header-background-1 = none
+ag-button-background-1 = none
+ag-button-foreground-1 = #000
+ag-button-border-1 = #808080
+ag-header-font-weight = 600
+ag-tab-border = 1px solid #d3d3d3
+ag-tab-background = #e6e6e6
+ag-tab-selected-background = #f6f6f6
+ag-tab-padding = 6px 8px 6px 8px
+ag-menu-option-active-color = #BDE2E5
+ag-select-background = white
+ag-select-foreground = #222
+ag-menu-option-padding = 2px 4px 2px 4px
+ag-menu-option-shortcut-padding = 2px 2px 2px 2px
+@import "theme-common"
+
+//stick in an override
+//.ag-common
+/Users/monsterstep/dev/repos/dashboard-app-maker/client/styles/aggrid/theme-common.styl
+/*
+todo
+- loading overlay colors
+- rich select colors
+*/
+
+@import 'nib'
+.ag-{ag-style}
+  // copying bootstrap with line-height, sorts out alignment problems with images beside text
+  line-height 1.4
+  font-family ag-root-font-family
+  font-size ag-root-font-size
+  color ag-foreground-1
+  // changing the image is same as what bootstrap does, without the images didn't align right
+  img
+    vertical-align middle
+    border 0
+  .ag-root
+    border ag-border-1
+  .ag-cell {}
+  .ag-cell-not-inline-editing
+    padding: ag-cell-padding;
+  // we do not want to color the range color when the cell is also focused
+  .ag-cell-range-selected-1:not(.ag-cell-focus)
+    background-color ag-range-selected-color-1
+  .ag-cell-range-selected-2:not(.ag-cell-focus)
+    background-color ag-range-selected-color-2
+  .ag-cell-range-selected-3:not(.ag-cell-focus)
+    background-color ag-range-selected-color-3
+  .ag-cell-range-selected-4:not(.ag-cell-focus)
+    background-color ag-range-selected-color-4
+  .ag-column-moving
+    .ag-cell
+      transition left 0.2s
+    .ag-header-cell
+      transition left 0.2s
+    .ag-header-group-cell
+      transition left 0.2s
+  .ag-cell-focus
+    border ag-cell-focused-border
+  .ag-cell-no-focus
+    border-right ag-cell-no-focus-border-right
+    border-top ag-cell-no-focus-border-top
+    border-left ag-cell-no-focus-border-left
+    border-bottom ag-cell-no-focus-border-bottom
+  .ag-cell-first-right-pinned
+    border-left ag-border-1
+  .ag-cell-last-left-pinned
+    border-right ag-border-1
+  // this needs to be after the other cell items, so the boarder gets preference
+  .ag-cell-highlight
+    border ag-cell-highlight-border
+  .ag-cell-highlight-animation
+    transition border 1s
+  // used by the animateShowChangedCellRenderer
+  .ag-value-change-delta
+    padding-right 2px
+  .ag-value-change-delta-up
+    color ag-value-change-delta-up-color
+  .ag-value-change-delta-down
+    color ag-value-change-delta-down-color
+  .ag-value-change-value
+    background-color transparent
+    border-radius 1px
+    padding-left 1px
+    padding-right 1px
+    transition background-color 1s
+  .ag-value-change-value-highlight
+    background-color ag-value-change-value-highlight-background-color
+    transition background-color 0.1s
+  .ag-rich-select
+    font-size 14px
+    border ag-border-1
+    background-color ag-select-background
+  .ag-rich-select-value
+    padding 2px
+  .ag-rich-select-list
+    border-top 1px solid ag-separator-color
+  .ag-rich-select-row
+    padding 2px
+  .ag-rich-select-row-selected
+    background-color ag-menu-option-active-color
+  .ag-large-text
+    border ag-border-1
+  .ag-large-textarea {}
+  // HEADER SECTION
+  .ag-header
+    color ag-header-foreground-1
+    background ag-header-background-1
+    border-bottom ag-border-1
+    font-weight ag-header-font-weight
+  .ag-header-icon
+    color ag-header-foreground-1
+    stroke none
+    fill ag-header-foreground-1
+  .ag-no-scrolls .ag-header-container
+    background ag-header-background-1
+    border-bottom ag-border-1
+  .ag-header-cell
+    border-right ag-border-1
+  .ag-header-cell-moving .ag-header-cell-label
+    opacity 0.5
+  .ag-header-cell-moving
+    background-color rgb(190,190,190);
+  .ag-header-group-cell
+    border-right ag-border-1
+  .ag-header-group-cell-with-group
+    border-bottom ag-border-1
+  .ag-header-cell-label
+    padding 4px 2px 4px 2px
+  .ag-header-cell-text
+    padding-left 2px
+  .ag-header-group-cell-label
+    padding 4px
+    padding-left 10px
+  .ag-header-group-text
+    margin-right 2px
+  .ag-header-cell-menu-button
+    padding 2px
+    margin-top 4px
+    border 1px solid transparent
+    border-radius 3px
+    box-sizing content-box /* When using bootstrap, box-sizing was set to 'border-box' */
+    line-height 0px /* normal line height, a space was appearing below the menu button */
+  .ag-pinned-right-header
+    border-left ag-border-1
+  .ag-header-cell-menu-button:hover
+    border ag-border-1
+  .ag-body
+    background-color ag-background-1
+  .ag-row-odd
+    background-color ag-row-odd-background-color
+  .ag-row-even
+    background-color ag-row-even-background-color
+  .ag-row-selected
+    background-color ag-row-selected-background-color
+  .ag-floating-top
+    .ag-row
+      background-color ag-row-floating-background-color
+  .ag-floating-bottom
+    .ag-row
+      background-color ag-row-floating-background-color
+  .ag-overlay-loading-wrapper
+    background-color rgba(255, 255, 255, 0.5)
+  .ag-overlay-loading-center
+    background-color #ffffff
+    border ag-border-1
+    border-radius 10px
+    padding 10px
+    color black
+  .ag-overlay-no-rows-center
+    background-color #ffffff
+    border ag-border-1
+    border-radius 10px
+    padding 10px
+  .ag-group-cell-entire-row
+    background-color ag-background-1
+    padding ag-cell-padding
+  .ag-footer-cell-entire-row
+    background-color ag-background-1
+    padding ag-cell-padding
+  .ag-group-cell
+    font-style italic
+  .ag-group-expanded
+    padding-right 4px
+  .ag-group-contracted
+    padding-right 4px
+  .ag-group-value
+    padding-right 2px
+  .ag-group-checkbox
+    padding-right 2px
+  .ag-footer-cell
+    font-style italic
+  .ag-menu
+    border ag-border-color-2
+    background-color ag-background-1
+    //color ag-foreground-1
+    cursor default
+    font-family ag-root-font-family
+    font-size: ag-root-font-size
+    .ag-tab-header
+      background-color: ag-tab-background
+    .ag-tab
+      padding ag-tab-padding
+      margin 2px 2px 0px 2px
+      display inline-block
+      border-right 1px solid transparent
+      border-left 1px solid transparent
+      border-top 1px solid transparent
+      border-top-right-radius 2px
+      border-top-left-radius 2px
+      // need to specify color and stroke again here because
+      // for blue, the tab header is different to the grid header
+    .ag-tab-selected
+      background-color ag-tab-selected-background
+      border-right ag-tab-border
+      border-left ag-tab-border
+      border-top ag-tab-border
+  .ag-menu-separator
+    border-top 1px solid ag-separator-color
+  .ag-menu-option {}
+  .ag-menu-option-active
+    background-color ag-menu-option-active-color
+  .ag-menu-option-icon
+    padding ag-menu-option-padding
+    vertical-align middle
+  .ag-menu-option-text
+    padding ag-menu-option-padding
+    vertical-align middle
+  .ag-menu-option-shortcut
+    padding ag-menu-option-shortcut-padding
+    vertical-align middle
+  .ag-menu-option-popup-pointer
+    padding ag-menu-option-padding
+    vertical-align middle
+  .ag-menu-option-disabled
+    opacity 0.5
+  .ag-menu-column-select-wrapper
+    margin 2px
+  .ag-filter-checkbox
+    position relative
+    top 2px
+    left 2px
+  .ag-filter-header-container
+    border-bottom 1px solid ag-separator-color
+  .ag-filter-apply-panel
+    border-top 1px solid ag-separator-color
+    padding 2px
+  .ag-filter-value
+    margin-left 4px
+  .ag-selection-checkbox
+    padding-right 4px
+  .ag-paging-panel
+    padding 4px
+  .ag-paging-button
+    margin-left 4px
+    margin-right 4px
+  .ag-paging-row-summary-panel
+    display inline-block
+    width 300px
+  .ag-tool-panel
+    background-color ag-background-1
+    border-right ag-border-1
+    border-bottom ag-border-1
+    border-top ag-border-1
+    color ag-foreground-1
+  .ag-status-bar
+    color ag-foreground-1
+    background-color ag-background-1
+    font-size ag-root-font-size
+    height 22px
+    border-bottom ag-border-1
+    border-left ag-border-1
+    border-right ag-border-1
+    padding 2px
+  .ag-status-bar-aggregations
+    float right
+  .ag-status-bar-item
+    padding-left 10px
+  .ag-column-drop-cell
+    background ag-button-background-1
+    color ag-button-foreground-1
+    border ag-button-border-1
+  .ag-column-drop-cell-ghost
+    opacity 0.5
+  .ag-column-drop-cell-text
+    padding-left 2px
+    padding-right 2px
+  .ag-column-drop-cell-button
+    border 1px solid transparent
+    padding-left 2px
+    padding-right 2px
+    border-radius 3px
+  .ag-column-drop-cell-button:hover
+    border ag-border-1
+  .ag-column-drop-empty-message
+    padding-left 2px
+    padding-right 2px
+    color grey
+  .ag-column-drop-icon
+    padding-right 4px
+  .ag-column-drop
+    background-color ag-background-1
+  /* this is for the rowGroupPanel, that appears along the top of the grid */
+  .ag-column-drop-horizontal
+    padding 4px 4px 4px 4px
+    border-top ag-border-1
+    border-left ag-border-1
+    border-right ag-border-1
+    .ag-column-drop-cell
+      padding 2px
+  /* this is for the column drops that appear in the toolPanel */
+  .ag-column-drop-vertical
+    padding 4px 4px 10px 4px
+    border-bottom ag-border-1
+    .ag-column-drop-cell
+      margin-top 2px
+    .ag-column-drop-empty-message
+      text-align center
+      padding 5px
+  .ag-pivot-mode
+    border-bottom ag-border-1
+    padding 4px
+    background-color ag-background-1
+  .ag-tool-panel
+    .ag-column-select-panel
+      border-bottom ag-border-1
+  .ag-select-agg-func-popup
+    cursor default
+    position absolute
+    font-size 14px
+    background-color ag-select-background
+    border ag-border-1
+  .ag-select-agg-func-item
+    padding-left 2px
+    padding-right 2px
+  .ag-select-agg-func-item:hover
+    background-color ag-menu-option-active-color
+/Users/monsterstep/dev/repos/dashboard-app-maker/client/styles/aggrid/theme-fresh.styl
+
+ag-style = "fresh"
+ag-root-font-family = "Helvetica Neue",Helvetica,Arial,sans-serif
+ag-root-font-size = 14px
+ag-scrollbar-background = unset
+ag-scrollbar-thumb = unset
+ag-border-1 = 1px solid grey
+ag-border-color-1 = #000
+ag-border-color-2 = #808080
+ag-background-1 = #f6f6f6
+ag-background-2 = #f0f0f0
+ag-foreground-1 = #222
+ag-header-foreground-1 = #000
+ag-separator-color = #d3d3d3
+ag-cell-focused-border = 1px solid darkgrey
+ag-cell-no-focus-border-right = 1px dotted grey
+ag-cell-no-focus-border-top = 1px solid transparent
+ag-cell-no-focus-border-left = 1px solid transparent
+ag-cell-no-focus-border-bottom = 1px solid transparent
+ag-cell-highlight-border = 1px solid darkgreen
+ag-cell-padding = 2px
+ag-row-selected-background-color = powderblue
+ag-row-odd-background-color = #f6f6f6
+ag-row-even-background-color = white
+ag-row-floating-background-color = #f0f0f0
+ag-value-change-delta-up-color = darkgreen
+ag-value-change-delta-down-color = darkred
+ag-value-change-value-highlight-background-color = #cec
+ag-range-selected-color-1 = rgba(120,120,120,0.4)
+ag-range-selected-color-2 = rgba(80,80,80,0.4)
+ag-range-selected-color-3 = rgba(40,40,40,0.4)
+ag-range-selected-color-4 = rgba(0,0,0,0.4)
+ag-header-background-1 = linear-gradient(white, lightgrey)
+ag-button-background-1 = linear-gradient(white, lightgrey)
+ag-button-foreground-1 = #000
+ag-button-border-1 = #808080
+ag-header-font-weight = normal
+ag-tab-border = 1px solid #d3d3d3
+ag-tab-background = #e6e6e6
+ag-tab-selected-background = #f6f6f6
+ag-tab-padding = 6px 8px 6px 8px
+ag-menu-option-active-color = #BDE2E5
+ag-select-background = white
+ag-select-foreground = #222
+ag-menu-option-padding = 2px 4px 2px 4px
+ag-menu-option-shortcut-padding = 2px 2px 2px 20px
+@import "theme-common"
+
+//stick in an override
+//.ag-common
+/Users/monsterstep/dev/repos/dashboard-app-maker/imports/index.js
+export default app => {
+  require('./core')(app)
+  // simple schema && collection2
+  // https://github.com/aldeed/meteor-simple-schema
+  // https://github.com/aldeed/meteor-collection2
+  require('./schema')(app)
+  // Grapher is a collection relationship manager and a secure data fetcher.
+  // http://grapher.cultofcoders.com
+  require('./grapher')(app)
+  if (Meteor.isClient) {
+    require('./components/loading')(app)
+    require('./routes')(app)
+  }
+  return app
+}
+/Users/monsterstep/dev/repos/dashboard-app-maker/imports/default/app.js
+export default {
+  name: 'dashboard app maker',
+  enableLogin: true,
+  enableRegister: false,
+  enableFiles: true,
+  enableHelp: true,
+  enableDevMenu: false,
+  enableSystem: false,
+  systemItemsPerRow: 4,
+  lockFixtures: true,
+  defaultRoutePrefix: 'domains',
+  defaultFakeSize: 10,
+  defaultDateFormat: 'YYYY.MM.DD',
+  defaultLoginField: 'username',
+  defaultUsers: [],
+  domains: [],
+  domainsIndex: {},
+  collections: {},
+  collectionsIndex: {},
+
+}
+/Users/monsterstep/dev/repos/dashboard-app-maker/imports/default/domain.files.js
+const filesCollection = new FilesCollection({ collectionName: 'files' })
+export default {
+  label: '文件',
+  name: 'files',
+  icon: 'fa fa-file',
+  isFiles: true,
+  filesCollection,
+  collection: filesCollection.collection,
+  fields: [
+    {
+      label: '文件名',
+      name: 'name',
+      type: String,
+    },
+    {
+      label: '所属域',
+      as: 'meta.domain',
+    },
+    {
+      label: '大小',
+      name: 'size',
+      type: Number,
+      'form.disabled': true,
+      onGrid: getFormatSize,
+    },
+    {
+      label: '扩展名',
+      name: 'extension',
+      type: String,
+      'form.disabled': true,
+    },
+    {
+      label: 'MIME',
+      name: 'type',
+      type: String,
+      'form.disabled': true,
+    },
+    {
+      label: '上传日期',
+      name: 'createdAt',
+      type: Date,
+      'form.disabled': true,
+      onGrid: getFormatDate,
+    },
+    {
+      label: '更新日期',
+      name: 'updatedAt',
+      type: Date,
+      'form.disabled': true,
+      onGrid: getFormatDate,
+    },
+  ],
+}
+function getFormatSize(d) {
+  return PrettyBytes(d.value)
+}
+function getFormatDate(d) {
+  return moment(d.value).format('YYYY年M月D日')
+}
+/Users/monsterstep/dev/repos/dashboard-app-maker/imports/default/domain.home.js
+export default {
+  label: '首页',
+  name: 'home',
+  icon: 'fa fa-home',
+  isHome: true,
+}
+/Users/monsterstep/dev/repos/dashboard-app-maker/imports/default/domain.js
+export default {
+  isCollection: true,
+  fields: [],
+  relations: [],
+  _modalForm: true,
+}
+/Users/monsterstep/dev/repos/dashboard-app-maker/imports/default/domain.system.js
+import component from '/imports/components/system'
+export default {
+  label: '系统',
+  name: 'system',
+  path: 'system',
+  icon: 'fa fa-cogs fa-2x',
+  isSystem: true,
+  component,
+}
+/Users/monsterstep/dev/repos/dashboard-app-maker/imports/default/field.fileIds.js
+export default {
+  name: 'fileIds',
+  type: [String],
+  ref: ['many', 'files', 'files'],
+  isFiles: true,
+  onGrid: false,
+}
+/Users/monsterstep/dev/repos/dashboard-app-maker/imports/default/field.js
+export default {
+  onGrid: true,
+}
+/Users/monsterstep/dev/repos/dashboard-app-maker/imports/default/index.js
+export { default as defaultAppProps } from './app'
+export { default as defaultDomainProps } from './domain'
+export { default as defaultDomainHome } from './domain.home'
+export { default as defaultDomainFiles } from './domain.files'
+export { default as defaultDomainSystem } from './domain.system'
+export { default as defaultFieldProps } from './field'
+export { default as defaultFieldFileIds } from './field.fileIds'
+export { default as simpleSchemaProps} from './simple.schema'
+/Users/monsterstep/dev/repos/dashboard-app-maker/imports/default/simple.schema.file.js
+const fields = {
+  size: {
+    type: Number
+  },
+  name: {
+    type: String
+  },
+  type: {
+    type: String
+  },
+  path: {
+    type: String
+  },
+  isVideo: {
+    type: Boolean
+  },
+  isAudio: {
+    type: Boolean
+  },
+  isImage: {
+    type: Boolean
+  },
+  isText: {
+    type: Boolean
+  },
+  isJSON: {
+    type: Boolean
+  },
+  isPDF: {
+    type: Boolean
+  },
+  extension: {
+    type: String,
+    optional: true
+  },
+  _storagePath: {
+    type: String
+  },
+  _downloadRoute: {
+    type: String
+  },
+  _collectionName: {
+    type: String
+  },
+  public: {
+    type: Boolean,
+    optional: true
+  },
+  meta: {
+    type: Object,
+    blackbox: true,
+    optional: true
+  },
+  userId: {
+    type: String,
+    optional: true
+  },
+  updatedAt: {
+    type: Date,
+    optional: true
+  },
+  versions: {
+    type: Object,
+    blackbox: true
+  }
+}
+export default fields
+/Users/monsterstep/dev/repos/dashboard-app-maker/imports/default/simple.schema.js
+export const schemaDefinitionOptions = [
+  'type',
+  'label',
+  'optional',
+  'required',
+  'autoValue',
+  'defaultValue',
+]
+export const oneOfProps = [
+  'type',
+  'min',
+  'max',
+  'minCount',
+  'maxCount',
+  'allowedValues',
+  'exclusiveMin',
+  'exclusiveMax',
+  'regEx',
+  'custom',
+  'blackbox',
+  'trim',
+]
+export const propsThatCanBeFunction = [
+  'label',
+  'optional',
+  'min',
+  'max',
+  'minCount',
+  'maxCount',
+  'allowedValues',
+  'exclusiveMin',
+  'exclusiveMax',
+  'regEx',
+]
+export default _.union(schemaDefinitionOptions, oneOfProps, propsThatCanBeFunction)
+/Users/monsterstep/dev/repos/dashboard-app-maker/imports/default/simple.schema.user.js
+export default {
+  username: {
+    type: String,
+    optional: true,
+  },
+  emails: {
+    type: Array,
+    optional: true,
+  },
+  'emails.$': {
+    type: Object,
+  },
+  'emails.$.address': {
+    type: String,
+    regEx: SimpleSchema.RegEx.Email,
+  },
+  'emails.$.verified': {
+    type: Boolean,
+  },
+  services: {
+    type: Object,
+    optional: true,
+    blackbox: true,
+  },
+  heartbeat: {
+    type: Date,
+    optional: true,
+  },
+  createdAt: {
+    type: Date,
+  },
+}
+/Users/monsterstep/dev/repos/dashboard-app-maker/imports/dev/fixtures.js
+export const makeFixtures = function (app, unlock) {
+  const {
+    defaultFakeSize,
+    lockFixtures,
+    domains,
+    domainsIndex,
+    collections,
+    defaultUsers,
+  } = app
+  unlock = unlock || !lockFixtures
+  const markDefaultUsers = _.clone(defaultUsers)
+  const collectionNames = _.chain(collections)
+    .keys()
+    .without('files')
+    .value()
+  const dummies = {}
+  _.each(domains, ({ name, fields, fakeSize, allFields, ...domain }) => {
+    if (is.not.truthy(unlock)) return false
+    if (is.not.truthy(_.includes(collectionNames, name))) {
+      console.log(`skip fake ${name}`)
+      return
+    }
+    let size = fakeSize || defaultFakeSize
+    if (name === 'users') {
+      size += defaultUsers.length
+    }
+    const cacheUnique = {}
+    const dataset = _.times(size, n => {
+      const data = {
+        _id: Random.id(),
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      }
+      _.each(allFields, ({ name, type, unique, allowedValues, ref, fake, ...field }) => {
+        if (allowedValues && unique) {
+          if (cacheUnique[name]) {
+            const value = _.chain(allowedValues)
+              .difference(cacheUnique[name])
+              .sample()
+            data[name] = value
+            cacheUnique[name].push(value)
+          } else {
+            const value = _.sample(allowedValues)
+            data[name] = value
+            cacheUnique[name] = [value]
+          }
+          return console.log('make unique value for', name)
+        }
+        if (allowedValues && !unique) {
+          return data[name] = _.sample(allowedValues)
+        }
+        if (fake && is.not.boolean(fake)) {
+          return data[name] = _.isFunction(fake) ? fake() : fake
+        }
+        if (type === String && !ref) {
+          return data[name] = faker.lorem.words()
+        }
+        if (type === Boolean && !ref) {
+          return data[name] = faker.random.boolean()
+        }
+        if (type === Number && !ref) {
+          return data[name] = faker.random.number()
+        }
+        if (type === Date && !ref) {
+          return data[name] = faker.date.past()
+        }
+      })
+      if (name === 'users') {
+        const userProps = _.get(markDefaultUsers, `[${n}]`)
+        if (userProps) _.defaultsDeep(userProps, data)
+      }
+      return data
+    })
+    dummies[name] = dataset
+  })
+  const dummyNames = _.keys(dummies)
+  !_.isEmpty(dummies) && _.each(domains, ({ name: domainName, fields, allFields, ...domain }) => {
+    if (is.falsy(_.includes(dummyNames, domainName))) return
+    _.each(allFields, ({ name: fieldName, fake, ref }) => {
+      if ((fake || true) && ref) {
+        const [ linkType, linkName ] = ref
+        if (linkName === 'files') return
+        dummies[domainName] = _.map(dummies[domainName], doc => {
+          if (linkType === 'one') {
+            doc[fieldName] = _.sample(dummies[linkName])._id
+          }
+          if (linkType === 'many') {
+            const simpleSize = dummies[linkName].length > 8 ? 8 : dummies[linkName].length
+            doc[fieldName] = _(dummies[linkName])
+              .map('_id')
+              .sampleSize(_.random(1, simpleSize))
+              .value()
+          }
+          return doc
+        })
+      }
+    })
+  })
+  unlock && _.each(dummies, (v, k) => {
+    const collection = collections[k]
+    collection.remove({})
+    if (!_.isEmpty(v)) {
+      if (k === 'users')
+        return collection.batchInsert(_.drop(v, markDefaultUsers.length))
+      collection.batchInsert(v)
+    }
+  })
+  _.each(markDefaultUsers, user => {
+    const { username } = user
+    !Meteor.users.findOne({ username }) && Accounts.createUser(_.omit(user, ['_id']))
+  })
+}
+/Users/monsterstep/dev/repos/dashboard-app-maker/imports/dev/index.js
+export default function (app) {
+  require('./methods')(app)
+  require('./init')(app)
+}
+/Users/monsterstep/dev/repos/dashboard-app-maker/imports/dev/init.js
+import { makeFixtures } from './fixtures'
+export default function (app) {
+  makeFixtures(app)
+}
+/Users/monsterstep/dev/repos/dashboard-app-maker/imports/dev/methods.js
+import { makeFixtures } from './fixtures'
+export default function (app) {
+  Meteor.methods({
+    'collections.reset'() {
+      makeFixtures(app, true)
+    },
+    'collections.empty'() {
+      _.each(app.collections, collection => {
+        if (collection._name === 'users') {
+          return collection.remove({ username: {
+            $ne: 'dev'
+          }})
+        }
+        return collection.remove({})
+      })
+    },
+  })
+}
+/Users/monsterstep/dev/repos/dashboard-app-maker/imports/grapher/exposures.js
+export default app => {
+  const exposed = []
+  _.each(app.domains, ({ isHome, isCollection, isFiles, collection, ...domain }) => {
+    if (isHome) return
+    const collectionName = _.get(collection, '_name')
+    if (collectionName && !_.includes(exposed, collectionName)) {
+      collection.expose()
+      exposed.push(collectionName)
+    }
+  })
+}
+/Users/monsterstep/dev/repos/dashboard-app-maker/imports/grapher/index.js
+export default app => {
+  require('./linkers')(app)
+  require('./reducers')(app)
+  Meteor.isServer && require('./exposures')(app)
+}
+/Users/monsterstep/dev/repos/dashboard-app-maker/imports/grapher/linkers.js
+export default function (app) {
+  const isLinkedDomains = []
+  _.each(app.domains, domain => {
+    const links = {}
+    const refFields = _.filter(domain.fields, 'ref')
+    _.each(refFields, field => {
+      const [ linkType, linkName, linkField ] = field.ref
+      if (_.includes(isLinkedDomains, linkName) && domain.isCollection !== true) return
+      links[linkField] = {
+        type: linkType,
+        collection: app.collections[linkName],
+        field: field.name,
+        index: true,
+      }
+      isLinkedDomains.push(linkName)
+    })
+    if (is.not.empty(links)) {
+      domain.collection.addLinks(links)
+    }
+  })
+  //
+  _.each(app.domains, domain => {
+    if (
+      is.not.truthy(domain, 'isCollection') ||
+      is.propertyDefined(domain, 'isTree')
+    ) return
+    const links = {}
+    _.each(domain.fields, field => {
+      if (is.not.array(field.inversedBy)) return
+      let [ inversedName, inversedCollection, inversedField ] = field.inversedBy
+      inversedCollection = inversedCollection || field.name
+      inversedField = inversedField || field.name
+      const findDomain = app.domainsIndex[inversedCollection]
+      links[inversedField] = {
+        collection: findDomain.collection,
+        inversedBy: inversedName,
+      }
+    })
+    if (is.not.empty(links)) {
+      domain.collection.addLinks(links)
+    }
+  })
+}
+/Users/monsterstep/dev/repos/dashboard-app-maker/imports/grapher/reducers.js
+export default (app) => {
+  _.each(app.domains, domain => {
+    const reducers = _.filter(domain.fields, 'reduce')
+    _.each(reducers, ({ name, query: body, reduce }) => {
+      domain.collection.addReducers({
+        [name]: {
+          body,
+          reduce,
+        }
+      })
+    })
+  })
+}
+/Users/monsterstep/dev/repos/dashboard-app-maker/imports/routes/404.js
+import {
+  blankLayoutComponent,
+  notFoundComponent,
+} from '../components'
+FlowRouter.notFound = {
+  action() {
+    const Main = notFoundComponent
+    Mount(blankLayoutComponent, { Main })
+  }
+}
+/Users/monsterstep/dev/repos/dashboard-app-maker/imports/routes/domain.js
+import {
+  defaultLayoutComponent,
+  actionComponent,
+  blankLayoutComponent,
+  notFoundComponent,
+} from '/imports/components'
+export default (app) => {
+  const url = `/${app.defaultRoutePrefix}/:name/:action`
+  FlowRouter.route(url, {
+    action(params, queryParams) {
+      const $ReactiveFilters = new ReactiveMap()
+      const FilesCollectionCache = new Mongo.Collection(null)
+      const { name, action } = params
+      const { _id } = queryParams
+      const domain = app.domainsIndex[name]
+      if (is.undefined(domain)) {
+        const Main = notFoundComponent
+        return Mount(blankLayoutComponent, { Main })
+      }
+      const DefaultLayoutComponent = defaultLayoutComponent({ app, domain, action })
+      const ActionComponent = actionComponent({ app, domain, action, _id, $ReactiveFilters, FilesCollectionCache })
+      const Main = main = is.function(domain.component) ? domain.component({ app, domain, action, $ReactiveFilters }) : ActionComponent[action]
+      const Layout = is.function(domain.layout) ? domain.layout({ app, domain, action, main }) : DefaultLayoutComponent
+      Mount(Layout, { Main })
+    }
+  })
+}
+/Users/monsterstep/dev/repos/dashboard-app-maker/imports/routes/domains.js
+import {
+  defaultLayoutComponent,
+  defaultDomainsComponent,
+  blankLayoutComponent,
+  notFoundComponent,
+} from '../components'
+export default function (app) {
+  const { defaultRoutePrefix } = app
+  const url = `/${defaultRoutePrefix}/:name`
+  FlowRouter.route(url, {
+    action(params, queryParams) {
+      const $ReactiveFilters = new ReactiveMap()
+      const FilesCollectionCache = new Mongo.Collection(null)
+      const { name } = params
+      const domain = app.domainsIndex[name]
+      const DefaultLayoutComponent = defaultLayoutComponent({ app, domain })
+      const DefaultDomainsComponent = defaultDomainsComponent({ app, domain, $ReactiveFilters, FilesCollectionCache })
+      if (is.undefined(domain)) {
+        const Main = notFoundComponent
+        return Mount(blankLayoutComponent, { Main })
+      }
+      const Main = main = is.function(domain.component) ? domain.component({ app, domain, $ReactiveFilters }) : DefaultDomainsComponent
+      const Layout = is.function(domain.layout) ? domain.layout({ app, domain, main }) : DefaultLayoutComponent
+      Mount(Layout, { Main })
+    }
+  })
+}
+/Users/monsterstep/dev/repos/dashboard-app-maker/imports/routes/home.js
+import {
+  defaultLayoutComponent,
+  defaultHomeComponent,
+} from '../components'
+export default (app) => {
+  FlowRouter.route('/', {
+    action() {
+      const domain = app.domainsIndex['home']
+      const DefaultHomeComponent = defaultHomeComponent(app)
+      const DefaultLayoutComponent = defaultLayoutComponent({ app, domain })
+      const Main = main = is.function(domain.component) ? domain.component({ app, domain }) : DefaultHomeComponent
+      const Layout = is.function(domain.layout) ? domain.layout({ app, domain, main }) : DefaultLayoutComponent
+      Mount(Layout, { Main })
+    }
+  })
+}
+/Users/monsterstep/dev/repos/dashboard-app-maker/imports/routes/index.js
+export default function (app) {
+  const { enableRegister } = app
+  require('./home')(app)
+  require('./domains')(app)
+  require('./domain')(app)
+  enableRegister && require('./register')(app)
+  require('./404')
+  require('./hooks')
+}
+/Users/monsterstep/dev/repos/dashboard-app-maker/imports/routes/register.js
+import {blankLayoutComponent as BlankLayout} from '../components'
+import {registerComponent as Register} from '../components'
+export default function (app) {
+  FlowRouter.route('/register', {
+    action () {
+      Mount(BlankLayout, { Main() { return <Register /> } })
+    }
+  })
+}
+/Users/monsterstep/dev/repos/dashboard-app-maker/imports/routes/hooks.js
+// router hooks
+// FlowRouter.triggers.enter([EmptyAppStatus])
+FlowRouter.triggers.exit([EmptyAppStatus])
+function EmptyAppStatus() {
+  AppStatusMap.clear()
+  // $ReactiveQuery.clear()
+}
+/Users/monsterstep/dev/repos/dashboard-app-maker/imports/trackers/actionbar.js
+export default ({ app, domain, action, _id, FilesCollectionCache }) => (props, onData) => {
+  const {
+    name: currentDomainName,
+  } = domain
+  const appStatusMap = AppStatusMap.all()
+  // 我应该如何使用这里还没有想好
+  const inversedFields = _.filter(domain.fields, field => field.inversedBy)
+  const refDomains = _.filter(app.domains, domain => {
+    return _.some(domain.fields, field=> _.get(field, 'ref[1]') === currentDomainName)
+  })
+  onData(null, { app, domain, _id, action, appStatusMap, refDomains, FilesCollectionCache })
+}
+/Users/monsterstep/dev/repos/dashboard-app-maker/imports/schema/index.js
+import simpleSchemaProps from '../default/simple.schema'
+import userSchema from '../default/simple.schema.user.js'
+import fileSchema from '../default/simple.schema.file.js'
+export default (app) => {
+  const {
+    collections,
+    domainsIndex,
+  } = app
+  const collectionNames = _.keys(collections)
+  _.each(collections, collection => {
+    const { _name: collectionName } = collection
+    const domainThatRefCurrentDomains = _.filter(app.domains, { isCollection: collectionName })
+    const allFieldsBelongToCurrentDomain = _.chain(domainThatRefCurrentDomains)
+      .map('fields')
+      .flatten()
+      .value()
+    const domain = domainsIndex[collectionName]
+    const { fields: domainFields } = domain
+    let schema = _.chain(_.unionBy(domainFields, allFieldsBelongToCurrentDomain, 'name'))
+      .filter('type')
+      .keyBy('name')
+      .mapValues(fields => _.pick(fields, simpleSchemaProps))
+      .mapValues(fields => {
+        if (collectionName === 'users')
+          fields = _.omit(fields, ['password'])
+        if (fields.autoValue && fields.defaultValue)
+          fields = _.omit(fields, ['defaultValue'])
+        return fields
+      })
+      .value()
+    if (collectionName === 'users') {
+      _.defaultsDeep(schema, userSchema)
+      schema = _.omit(schema, ['password'])
+    }
+    if (collectionName === 'files') {
+      _.defaultsDeep(schema, fileSchema)
+    }
+    collection.attachSchema(new SimpleSchema(schema))
+  })
+}
+/Users/monsterstep/dev/repos/dashboard-app-maker/imports/trackers/detail.js
+export default ({ app, domain, _id, action }) => (props, onData) => {
+  const defaultQuery = {
+    $filters: { _id }
+  }
+  const collection = domain.collection.createQuery({
+    ...defaultQuery,
+    ...domain.query
+  })
+  if (collection.subscribe().ready()) {
+    const data = { ...collection.fetchOne() }
+    const fields = domain.fields
+    onData(null, { app, domain, fields, data })
+  } else {
+    onData(null, null)
+  }
+}
+/Users/monsterstep/dev/repos/dashboard-app-maker/imports/trackers/domains.js
+export default ({ app, domain, refQuery, $ReactiveFilters }) => (props, onData) => {
+  const query = {}
+  const $reactiveFilters = {
+    $filters: Clean($ReactiveFilters.all()),
+  }
+  const {
+    fields: domainFields,
+    query: domainQuery,
+  } = domain
+  $defaultOptions = {
+    $options: {
+      sort: {
+        updatedAt: -1,
+        createdAt: -1,
+      },
+    },
+  }
+  _.merge(query, domainQuery)
+  _.merge(query, $defaultOptions)
+  _.merge(query, $reactiveFilters)
+  if (refQuery)
+    _.merge(query, refQuery)
+  console.log(query)
+  const collection = domain.collection.createQuery(query)
+  if (collection.subscribe().ready()) {
+    const heads = domain.gridFields
+    const data = collection.fetch()
+    onData(null, { app, domain, heads, data })
+  } else {
+    onData(null, null)
+  }
+}
+/Users/monsterstep/dev/repos/dashboard-app-maker/imports/trackers/filter.js
+export default ({ app, domain, $ReactiveFilters }) => (props, onData) => {
+  onData(null, { app, domain, $ReactiveFilters })
+}
+/Users/monsterstep/dev/repos/dashboard-app-maker/imports/trackers/form.js
+export default ({ app, domain, action, _id, FilesCollectionCache }) => (props, onData) => {
+  const query = {}
+  const appStatusMap = AppStatusMap.all()
+  domain = appStatusMap.domain || domain
+  _id = appStatusMap._id || _id
+  action = appStatusMap.action || action
+  _refId = _id
+  isRef = appStatusMap.isRef
+  const defaultQuery = {
+    $filters: { _id }
+  }
+  _.merge(query, defaultQuery)
+  _.merge(query, domain.query)
+  if (domain.enableFiles) {
+    query.files = app.domainsIndex['files'].query
+  }
+  const collection = domain.collection.createQuery(query)
+  const refs = _.map(domain.relations, rel => rel.domain.collection.createQuery(rel.domain.query))
+  if (_.every([collection, ...refs], ref => ref.subscribe().ready())) {
+    const fields = _.filter(domain.fields, 'type')
+    const data = { ...collection.fetchOne() }
+    const relations = {}
+    _.each(refs, ref => {
+      if (collection.collection._name === ref.collection._name) {
+        relations[ref.collection._name] = _.filter(ref.fetch(), d => d._id !== _id)
+      } else {
+        relations[ref.collection._name] = ref.fetch()
+      }
+    })
+    onData(null, { app, domain, fields, _id, action, data, relations, FilesCollectionCache, _refId, isRef, })
+  } else {
+    onData(null, null)
+  }
+}
+/Users/monsterstep/dev/repos/dashboard-app-maker/imports/trackers/index.js
+export { default as ActionbarTracker } from './actionbar'
+export { default as DomainsTracker } from './domains'
+export { default as DetailTracker } from './detail'
+export { default as FilterTracker } from './filter'
+export { default as FormTracker } from './form'
+/Users/monsterstep/dev/repos/dashboard-app-maker/imports/utils/index.js
+export const getRelationsFromDomain = ({ app, domain }) => {
+  if (!_.get(domain, 'collection._name'))
+    return console.log(`skip make relationships for ${domain.name}`)
+  const { _name } = domain.collection
+  const _relations = _.chain(app.domains)
+    .filter(d => findRef(d.fields, _name))
+    .map(d => mapRef(d, _name))
+    .compact()
+    .value()
+  const _findRefsOnSelf = _.chain(domain.fields)
+    .filter('ref')
+    .map(f => {
+      const refDomainName = _.get(f, 'ref[1]')
+      const refDomain = app.domainsIndex[refDomainName]
+      return {
+        label: refDomain.label,
+        name: refDomain.name,
+        field: refDomainName,
+        domain: refDomain,
+      }
+    })
+    .value()
+  domain.relations = [..._relations, ..._findRefsOnSelf]
+}
+function findRef(fields, name) {
+  return _.some(fields, f => {
+    const refName = _.get(f, 'ref[1]')
+    return refName === name
+  })
+}
+function mapRef(domain, name) {
+  const refField = _.find(domain.fields, field => {
+    return _.get(field, 'ref[1]') === name
+  })
+  return {
+    label: domain.label,
+    name: domain.name,
+    field: refField.name,
+    domain: domain,
+  }
+}
+//  把 field 下 form. 内容合并到 form 对象下
+export const manipulateFormProps = (field) => {
+  const {
+    type: fieldType,
+    allowedValues,
+    ref,
+  } = field
+  const formType = _.get(field, 'form.type')
+  if (is.not.json(field.form) || is.empty(field.form)) {
+    const linkType = _.get(field, 'ref[0]')
+    if (linkType === 'one') {
+      _.set(field, 'form.type', 'select')
+      _.set(field, 'form.multiple', false)
+    }
+    if (linkType === 'many') {
+      _.set(field, 'form.type', 'select')
+      _.set(field, 'form.multiple', true)
+    }
+  }
+  if (fieldType === String && !formType && (!allowedValues && !ref)) {
+    _.set(field, 'form.type', 'text')
+  }
+  if (fieldType === String && allowedValues) {
+    _.set(field, 'form.type', _.get(field, 'form.type') || 'select')
+  }
+  if (fieldType === Boolean) {
+    _.set(field, 'allowedValues', [true, false])
+    _.set(field, 'allowedLabels', ['是', '否'])
+    _.set(field, 'defaultValue', field.defaultValue || false)
+  }
+  if (fieldType === Boolean && !formType) {
+    _.set(field, 'form.type', 'checkbox')
+  }
+  if (is.all.truthy(
+    _.isEqual(fieldType, Boolean),
+    _.isEqual(formType, 'radio'),
+  )) {
+    _.set(field, 'allowedValues', [true, false])
+  }
+  if (field.type === Number) {
+    _.set(field, 'form.type', 'number')
+  }
+  if (field.type === Date) {
+    _.set(field, 'form.type', 'date')
+  }
+  const formKeys = _.chain(field)
+    .keys()
+    .filter(filterFormKeys)
+    .value()
+  const formKeysObj = Dot.object(_.pick(field, formKeys))
+  field.form = Dot.object({
+    ...formKeysObj.form,
+    ...field.form,
+  })
+}
+function filterFormKeys(key) {
+  const keyPath = _.toPath(key)
+  return (keyPath.length > 1 && keyPath[0] === 'form')
+}
+export const mergeUnionByKey = (...args) => {
+  const config = _.chain(args)
+    .filter(_.isString)
+    .value()
+  const key = _.get(config, '[0]')
+  const strategy = _.get(config, '[1]') === 'override' ? _.merge : _.defaultsDeep
+  if (!_.isString(key))
+    throw new Error('missing key')
+  const datasets = _.chain(args)
+    .reject(_.isEmpty)
+    .filter(_.isArray)
+    .value()
+  const datasetsIndex = _.mapValues(datasets, dataset => _.keyBy(dataset, key))
+  const uniqKeys = _.chain(datasets)
+    .flatten()
+    .map(key)
+    .uniq()
+    .value()
+  return _.chain(uniqKeys)
+    .map(val => {
+      const data = {}
+      _.each(datasetsIndex, dataset => strategy(data, dataset[val]))
+      return data
+    })
+    .filter(key)
+    .value()
+}
+/Users/monsterstep/dev/repos/dashboard-app-maker/imports/components/index.js
+// 常用 ui 组件
+export { default as dropdownComponent } from './common/dropdown'
+export { default as HookComponent } from './common/hook'
+export { default as ModalComponent } from './common/modal'
+// breadcrumbs
+export { default as BreadcrumbsComponent } from './layout/breadcrumbs'
+// filter
+export { default as FilterListComponent } from './filter/list'
+// grid
+export { default as GridComponent } from './grid/grid'
+export { default as FilesGridComponent } from './grid/files'
+// form
+export { default as FormComponent } from './form/form'
+// file
+export { default as uploaderComponent } from './file/uploader'
+// 布局相关
+export { default as notFoundComponent } from './layout/404'
+export { default as ActionbarComponent } from './layout/actionbar'
+export { default as actionComponent } from './layout/action'
+export { default as blankLayoutComponent } from './layout/blank'
+export { default as currentUserComponent } from './layout/current.user'
+export { default as devComponent } from './layout/dev'
+export { default as helpComponent } from './layout/help'
+export { default as defaultLayoutComponent } from './layout/layout'
+export { default as leftComponent } from './layout/left'
+export { default as topComponent } from './layout/top'
+// 页面相关
+export { default as defaultHomeComponent } from './home/home'
+export { default as defaultDomainsComponent } from './domain/domains'
+export { default as defaultDomainComponent } from './domain/domain'
+export { default as DetailComponent } from './domain/detail'
+// login register
+export { default as loginComponent } from './login/login'
+export { default as registerComponent } from './register/register'
+/Users/monsterstep/dev/repos/dashboard-app-maker/imports/components/loading.js
+import {
+  setDefaultLoadingComponent,
+} from 'react-komposer'
+export default app => {
+  const loading = () => <div className='ui-flex ui-flex-center ui-fit-height'>
+    <div className='spinner'>
+      <div className='double-bounce1'></div>
+      <div className='double-bounce2'></div>
+    </div>
+  </div>
+  setDefaultLoadingComponent(loading)
+}
+/Users/monsterstep/dev/repos/dashboard-app-maker/imports/components/common/dropdown.js
+import React, { Component } from 'react'
+const defaultRootComponentProps = {
+  className: 'react-dropdown-menu-root',
+  width: 128,
+}
+const defaultRootComponentStyle = {
+  display: 'inline-block',
+  position: 'relative',
+  padding: 0,
+  cursor: 'pointer',
+}
+const defaultMenuComponentProps = {
+  className: 'react-dropdown-menu'
+}
+const defaultMenuComponentStyle = {
+  display: 'none',
+  position: 'absolute',
+  left: 0,
+  padding: 0,
+  width: defaultRootComponentProps.width + 'px',
+  backgroundColor: 'red',
+}
+const defaultItemComponentProps = {
+  className: 'react-dropdown-item'
+}
+const defaultItemComponentStyle = {
+  display: 'block',
+  padding: '8px',
+  borderBottom: '1px solid white',
+  color: 'white',
+  cursor: 'pointer',
+}
+function RootComponent({ text, component, menu }) {
+  return <div
+    { ...defaultRootComponentProps }
+    style={defaultRootComponentStyle}
+    onMouseEnter={menu && handleOnMouse}
+    onMouseLeave={menu && handleOnMouse}
+  /* end of start div */>
+    {component ? component() : <span>{text}</span>}
+    {menu && <MenuComponent menu={menu} />}
+  </div>
+}
+function MenuComponent({ text = 'undefined', href = '#', menu = [], style= {} }) {
+  return <div
+    {...defaultMenuComponentProps}
+    style={{...defaultMenuComponentStyle, ...style}}
+  /* end of start div  */>
+    {menu.map(({ text, component, href, menu, onClick, ...item}, itemIdx) => <ItemComponent
+      key={itemIdx}
+      text={text}
+      href={href}
+      menu={menu}
+      onClick={onClick}
+    />)}
+  </div>
+}
+function ItemComponent({ text, component, href, menu, onClick }) {
+  return <div
+    {...defaultItemComponentProps}
+    style={defaultItemComponentStyle}
+    onMouseEnter={menu && handleOnMouse}
+    onMouseLeave={menu && handleOnMouse}
+    onClick={onClick}
+  /* end of start div */>
+    {component ? component() : <span>{text}</span>}
+    {menu && <MenuComponent menu={menu} />}
+  </div>
+}
+function handleOnMouse(evt) {
+  const viewportWidth = Math.max(document.documentElement.clientWidth, window.innerWidth || 0)
+  const viewportHeight = Math.max(document.documentElement.clientHeight, window.innerHeight || 0)
+  const pageX = evt.pageX
+  const pageY = evt.pageY
+  const currentTarget = evt.currentTarget
+  const children = Array.prototype.slice.call(currentTarget.parentNode.children)
+  const currentIdx = children.indexOf(currentTarget) + 1
+  const isRootEl = currentTarget.className === defaultRootComponentProps.className
+  const clientRect = currentTarget.getBoundingClientRect()
+  const menu = currentTarget.lastElementChild
+  if (isRootEl) {
+    if (viewportWidth / 2 > pageX)
+      menu.style.left = 0
+    else
+      menu.style.left = -(defaultRootComponentProps.width - clientRect.width) + 'px'
+    if (viewportHeight / 2 > pageY)
+      menu.style.top = clientRect.height + 'px'
+    else
+      menu.style.bottom = (currentTarget.offsetTop + clientRect.height) + 'px'
+  } else {
+    if (viewportWidth / 2 > pageX)
+      menu.style.left = clientRect.width + 'px'
+    else
+      menu.style.left = -clientRect.width + 'px'
+    if (viewportHeight / 2 > pageY)
+      menu.style.top = currentTarget.offsetTop + 'px'
+    else
+      menu.style.bottom = (children.length - currentIdx) * clientRect.height + 'px'
+  }
+  if (evt.type === 'mouseenter')
+    menu.style.display = 'block'
+  else
+    menu.style.display = 'none'
+}
+export default RootComponent
+/Users/monsterstep/dev/repos/dashboard-app-maker/imports/components/common/hook.js
+class HookComponent extends Component {
+  constructor({ willMount, didMount, willUnmount }) {
+    super()
+    this.componentWillMount = willMount
+    this.componentDidMount = didMount
+    this.componentWillUnmount = willUnmount
+  }
+  render() {
+    return null
+  }
+}
+export default HookComponent
+/Users/monsterstep/dev/repos/dashboard-app-maker/imports/components/common/modal.js
+class index extends Component {
+  componentDidMount() {
+    const modal = this.refs.modal
+    const modalWidth = modal.clientWidth
+    const modalHeight = modal.clientHeight
+    const screenWidth = $('body').width()
+    const screenHeight = $('body').height()
+    modal.style.top = (screenHeight - modalHeight) / 2 + document.body.scrollTop + 'px'
+    modal.style.left = (screenWidth - modalWidth) / 2 + 'px'
+  }
+  render() {
+    const { children } = this.props
+    return <div className='ui-modal-wrapper'>
+      <div className='ui-modal-overlay' onClick={() => AppStatusMap.clear()}></div>
+      <div className='ui-modal-main' ref='modal' style={{ width: 768, height: 512 }}>{children}</div>
+    </div>
+  }
+}
+export default index
+/Users/monsterstep/dev/repos/dashboard-app-maker/imports/components/domain/detail.js
+import { renderValue } from '/imports/utils'
+export default ({ app, domain, fields, data }) => {
+  const fieldsGroupByTab = _.chain(fields)
+    .groupBy('tab')
+    .toPairs()
+    .value()
+  return <div>
+    {(fieldsGroupByTab).map((tab, tabIdx) => {
+      const [ tabName, tabFields ] = tab
+      return <div key={tabIdx}>
+        <h4 style={{ backgroundColor: 'red' }}>
+          {tabName === 'undefined' ? '基础' : tabName}
+        </h4>
+        {tabFields.map((field, fieldIdx) => <div key={fieldIdx}>
+          <span>{field.label || field.name}</span>
+          <span>：</span>
+          <span>{JSON.stringify(data[field.name])}</span>
+        </div>)}
+      </div>
+    })}
+  </div>
+}
+/Users/monsterstep/dev/repos/dashboard-app-maker/imports/components/domain/domain.js
+import {
+  ActionbarTracker,
+  DetailTracker,
+  DomainsTracker,
+  RelationsTracker,
+} from '/imports/trackers'
+import {
+  ActionbarComponent,
+  DetailComponent,
+  GridComponent,
+} from '/imports/components'
+export default ({ app, domain, _id, action, $ReactiveFilters, FilesCollectionCache }) => {
+  const ActionbarContainerComponent = Container(ActionbarTracker({ app, domain, _id, action, FilesCollectionCache }))(ActionbarComponent)
+  const DetailContainerComponent = Container(DetailTracker({ app, domain, _id, action }))(DetailComponent)
+  const DomainComponent = () => <div>
+    <h4>placeholder</h4>
+    <ActionbarContainerComponent />
+    <h4>placeholder</h4>
+    <DetailContainerComponent />
+    {domain.relations.map((rel, refIdx) => {
+      const refQuery = {
+        $filters: {
+          [rel.field]: _id
+        }
+      }
+      const GridContainerComponent = Container(DomainsTracker({ app, domain: rel.domain, refQuery, $ReactiveFilters }))(GridComponent)
+      return <div key={refIdx}>
+        <h3>{rel.label}</h3>
+        <GridContainerComponent key={refIdx} height='300px' />
+      </div>
+    })}
+  </div>
+  return DomainComponent
+}
+/Users/monsterstep/dev/repos/dashboard-app-maker/imports/components/domain/domains.js
+import {
+  ActionbarTracker,
+  DomainsTracker,
+  FilterTracker,
+} from '/imports/trackers'
+import {
+  ActionbarComponent,
+  GridComponent,
+  FilterListComponent,
+} from '/imports/components'
+export default ({ app, domain, $ReactiveFilters, FilesCollectionCache }) => {
+  const ActionbarContainerComponent = Container(ActionbarTracker({ app, domain, FilesCollectionCache }))(ActionbarComponent)
+  const FiltersContainerComponent = Container(FilterTracker({ app, domain, $ReactiveFilters }))(FilterListComponent)
+  const GridContainerComponent = Container(DomainsTracker({ app, domain, $ReactiveFilters }))(GridComponent)
+  const DomainsComponent = () => <div className='ui-flex-column ui-flex-1 ui-wrapper-domains'>
+    <ActionbarContainerComponent />
+    <div className='ui-flex-row ui-flex-1 ui-wrapper-grid'>
+      <FiltersContainerComponent />
+      <div className='ui-flex-column ui-flex-1 ui-padded'>
+        <GridContainerComponent />
+      </div>
+    </div>
+  </div>
+  return DomainsComponent
+}
+/Users/monsterstep/dev/repos/dashboard-app-maker/imports/components/file/uploader.js
+import {
+  FilesGridComponent,
+} from '/imports/components'
+class index extends Component {
+  constructor({app, domain, filesDomain, FilesCollectionCache, data }) {
+    super()
+    this.app = app
+    this.domain = domain
+    this.filesDomain = filesDomain
+    this.FilesCollection = this.filesDomain.filesCollection
+    this.FilesCollectionCache = FilesCollectionCache
+    this.data = data
+  }
+  pickFiles(evt) {
+    _.forOwn(evt.currentTarget.files, this.addMeta.bind(this))
+  }
+  addMeta(file) {
+    file = _.extend(file, {
+      _fileId: Random.id(),
+      uploaded: false,
+      domain: this.domain.name,
+    })
+    this.uploadFile(file)
+  }
+  uploadFile(file) {
+    const { FilesCollection, FilesCollectionCache } = this
+    const uploader = FilesCollection.insert({
+      file: file,
+      streams: 'dynamic',
+      chunkSize: 'dynamic',
+      meta: {
+        _fileId: file._fileId,
+        domain: file.domain,
+      }
+    }, false)
+    uploader.on('start', (err, resp) => {
+      FilesCollectionCache.insert(file)
+    })
+    uploader.on('end', (err, resp) => {
+      FilesCollectionCache.update({ _fileId: resp.meta._fileId }, {
+        $set: {
+          _realFileId: resp._id,
+          uploaded: true,
+        }
+      })
+    })
+    uploader.start()
+  }
+  uploadbarTracker(props, onData) {
+    const { data, FilesCollectionCache } = this
+    const filesInPlaceholder = FilesCollectionCache.find({}).count()
+    let existFiles = []
+    if (data._id && is.not.empty(data.fileIds)) {
+      existFiles = data.fileIds || []
+    }
+    onData(null, {
+      total: filesInPlaceholder + existFiles.length,
+      uploadedCount: FilesCollectionCache.find({ uploaded: true }).count() + existFiles.length
+    })
+  }
+  filesTracker(props, onData) {
+    const { app, data, domain, filesDomain, FilesCollection, FilesCollectionCache } = this
+    if (data._id && is.not.empty(data.files)) {
+      const files = _.compact(_.concat(data.files, FilesCollectionCache.find().fetch()))
+      onData(null, { app, files })
+      return
+    }
+    onData(null, {
+      app,
+      files: FilesCollectionCache.find().fetch(),
+    })
+  }
+  componentWillUnmount() {
+    this.FilesCollectionCache.remove({})
+  }
+  render() {
+    const FilesComponent = ({ app, files }) => <FilesGridComponent app={app} data={files} />
+    const UploadbarComponent = ({ total, uploadedCount }) => <label htmlFor="ui-files-picker" style={{ display: 'block', position: 'relative', 'zIndex': 999 }}>
+      <progress style={{ position: 'absolute', width: '100%',height: '100%', border: 0, zIndex: -1 }} value={uploadedCount} max={total}></progress>
+      <span style={{ color: 'white', display: 'block', textAlign: 'center', padding: '4px' }}>上传文件 {uploadedCount}/{total}</span>
+      <input id='ui-files-picker' type='file' multiple={true} hidden onChange={this.pickFiles.bind(this)} />
+    </label>
+    const UploadbarContainerComponent = Container(this.uploadbarTracker.bind(this))(UploadbarComponent)
+    const FilesContainerComponent = Container(this.filesTracker.bind(this))(FilesComponent)
+    return <div className='ui-flex-column ui-fit-height ui-wrapper-uploader'>
+      <UploadbarContainerComponent />
+      <FilesContainerComponent />
+    </div>
+  }
+}
+export default index
+/Users/monsterstep/dev/repos/dashboard-app-maker/imports/components/filter/filter.js
+import item from './item'
+export default ({ app, domain, $ReactiveFilters, field, fieldIdx }) => {
+  const Index = Container(compose({ app, domain, $ReactiveFilters, field, fieldIdx }))(comp)
+  return <Index key={fieldIdx} />
+}
+function compose({ app, domain, $ReactiveFilters, field, fieldIdx }) {
+  return (props, onData) => {
+    const isActiveAll = getIsActiveAll({ field, $ReactiveFilters })
+    onData(null, { app, domain, $ReactiveFilters, field, fieldIdx, isActiveAll })
+  }
+}
+function comp({ app, domain, $ReactiveFilters, field, fieldIdx, isActiveAll }, context) {
+  return <div className='ui-grid-filter' key={fieldIdx}>
+    <h3>{field.label}</h3>
+    <a href='#' className={isActiveAll} onClick={(evt) => clearFilter({ evt, field, $ReactiveFilters })}>全部</a>
+    {field.allowedValues.map((val, valIdx) => item({ field, domain, app, $ReactiveFilters, val, valIdx }))}
+  </div>
+}
+function getIsActiveAll({ field, $ReactiveFilters }) {
+  const fieldName = field.name
+  const $reactiveFilters = $ReactiveFilters.all()
+  return _.isEmpty(_.get($reactiveFilters, `${fieldName}.$in`)) ? 'active' : ''
+}
+function clearFilter({ evt, field, $ReactiveFilters }) {
+  evt.preventDefault()
+  evt.metaKey || evt.ctrlKey ?
+    $ReactiveFilters.delete(field.name) :
+    $ReactiveFilters.clear()
+}
+/Users/monsterstep/dev/repos/dashboard-app-maker/imports/components/filter/item.js
+export default ({ field, domain, app, $ReactiveFilters, val, valIdx }) => {
+  const Index = Container(compose({ field, domain, app, $ReactiveFilters, val, valIdx }))(comp)
+  return <Index key={valIdx} />
+}
+function compose({ field, domain, app, $ReactiveFilters, val, valIdx }) {
+  return (props, onData) => {
+    const isActive = getIsActive({ field, $ReactiveFilters, val })
+    onData(null, { field, domain, app, $ReactiveFilters, val, valIdx, isActive })
+  }
+}
+function comp({ field, domain, app, $ReactiveFilters, val, valIdx, isActive }) {
+  const allowedValues = field.allowedValues
+  const allowedLabels = field.allowedLabels
+  const label = allowedLabels ? allowedLabels[_.indexOf(allowedValues, val)] : val
+  return <a key={valIdx} href='#' className={isActive} onClick={(evt) => setFilter({ evt, app, domain, field, val, $ReactiveFilters })}>{label}</a>
+}
+function getIsActive({ field, $ReactiveFilters, val }) {
+  const fieldName = field.name
+  const $reactiveFilters = $ReactiveFilters.all()
+  const fieldValue = _.get($reactiveFilters, `${fieldName}.$in`) || []
+  return _.includes(fieldValue, val) ? 'active' : ''
+}
+function setFilter({ evt, app, domain, field, val, $ReactiveFilters }) {
+  evt.preventDefault()
+  const fieldName = field.name
+  if (evt.metaKey || evt.ctrlKey) {
+    const $reactiveFilters = $ReactiveFilters.all()
+    let reactiveFilterValue = _.get($reactiveFilters, `${fieldName}.$in`) || []
+    _.includes(reactiveFilterValue, val) ?
+      (reactiveFilterValue = _.without(reactiveFilterValue, val)) :
+      (reactiveFilterValue = _.union(reactiveFilterValue, [val]))
+    $ReactiveFilters.set({
+      [fieldName]: {
+        $in: reactiveFilterValue
+      },
+    })
+  } else {
+    $ReactiveFilters.clear()
+    $ReactiveFilters.set({
+      [fieldName]: {
+        $in: [val]
+      },
+    })
+  }
+}
+/Users/monsterstep/dev/repos/dashboard-app-maker/imports/components/filter/list.js
+import filter from './filter'
+import {
+  FilterTracker,
+} from '/imports/trackers'
+export default ({ app, domain, $ReactiveFilters }) => {
+  const { filterEnabledFields } = domain
+  return <div className='ui-wrapper-filters'>
+    {filterEnabledFields.map((field, fieldIdx) => filter({ app, domain, $ReactiveFilters, field, fieldIdx }))}
+  </div>
+}
+/Users/monsterstep/dev/repos/dashboard-app-maker/imports/components/form/form.js
+import Select from './select'
+import screenfull from 'screenfull'
+import { uploaderComponent as UploaderComponent } from '../'
+import submit from './submit'
+const defaultFormTypes = [
+  'datetime-local',
+  'email',
+  'month',
+  'number',
+  'password',
+  'search',
+  'tel',
+  'text',
+  'time',
+  'url',
+  'week',
+  'color',
+]
+export default ({ app, domain, fields, _id, action, data, relations, FilesCollectionCache, _refId, isRef }) => {
+  const filesDomain = _.find(app.domains, { isFiles: true })
+  const filesTab = _.find(fields, { isFiles: true })
+  const hiddenFields = _.filter(fields, field => {
+    return _.get(field, 'form.type') === 'hidden'
+  })
+  const tabGroups = _(fields)
+    .reject(item => {
+      // if (_.get(item, 'form.type') === 'hidden')
+      //   return true
+      if (item.isFiles)
+        return item.isFiles
+      if (item.name === 'username' || item.name === 'password')
+        return is.all.truthy(domain.isUsers, action === 'edit')
+    })
+    .groupBy('tab')
+    .toPairs()
+    .value()
+  if (filesTab)
+    tabGroups.push(['文件', [], 'isFiles'])
+  const FormComponent = <form className='ui-flex-column ui-form' onSubmit={(evt) => submit({ evt, app, domain, action, _id, FilesCollectionCache, data, isRef })}>
+    <div className='ui-tab-headers'>
+      {tabGroups.map((tab, idx) => {
+        const [tabName, tabContent, isFiles] = tab
+        const showTab = is.not.empty(tabContent) || isFiles === 'isFiles'
+        return showTab && <div key={idx} className={`ui-tab-headers-item ${idx === 0 && 'active'}`} onClick={(e) => {
+          $('.ui-tab-headers-item').removeClass('active')
+          $(e.currentTarget).addClass('active')
+          $('.ui-tab-content').hide()
+          $(`.ui-tab-content-${idx}`).show()
+        }}>
+          {(tabName === 'undefined' ? '基础' : tabName)}
+        </div>})}
+    </div>
+    {tabGroups.map((tab, idx) => {
+      const groupFormElementsByRow = _.chain(tab[1])
+        .groupBy('row')
+        .toPairs()
+        .value()
+      const _wrapperProps = {
+        key: idx,
+        className: `ui-flex-1 ui-flex-swag-scroll ui-tab-content ui-tab-content-${idx}`,
+        style: {
+          display: (idx === 0) ? '' : 'none',
+        }
+      }
+      if (tab[2]) {
+        const uploaderProps = {
+          app,
+          domain,
+          filesDomain,
+          FilesCollectionCache,
+          data
+        }
+        return <div {..._wrapperProps}>
+          <UploaderComponent {...uploaderProps} />
+        </div>
+      }
+      return <div {..._wrapperProps}>
+        {groupFormElementsByRow.map((row, rowIdx) => <div key={rowIdx} className='ui-form-group'>
+          {row[1].map((field, fieldIdx) => {
+            const {
+              allowedValues,
+              allowedLabels,
+            } = field
+            const formType = _.get(field, 'form.type')
+            const fieldName = field.name
+            const fieldLabel = field.label
+            const fieldType = field.type
+            const fieldId = `ui-form-field-${fieldName}`
+            const formProps = field.form
+            // console.log(fieldName, fieldType, formType, data, relations)
+            if (_.includes(defaultFormTypes, formType)) {
+              const fieldValue = _.get(data, fieldName)
+              return <div key={fieldIdx} className='ui-form-field'>
+                <label className='ui-form-label-wrapper' htmlFor={fieldId}>
+                  <span className='ui-form-label'>{fieldLabel}</span>
+                  <input {...field.form} type={formType} name={fieldName} defaultValue={fieldValue} id={fieldId} />
+                </label>
+              </div>
+            }
+            if (formType === 'date') {
+              const fieldValue = data[_.get(field, 'name')] ? new Date(data[_.get(field, 'name')]) : new Date()
+              const fieldValueFormatted = moment(fieldValue).format('YYYY-MM-DD')
+              return <div key={fieldIdx} className='ui-form-field'>
+                <label className='ui-form-label-wrapper' htmlFor={fieldId}>
+                  <span className='ui-form-label'>{fieldLabel}</span>
+                  <input {...field.form} type={'date'} name={fieldName} defaultValue={fieldValueFormatted} id={fieldId} />
+                </label>
+              </div>
+            }
+            if (formType === 'textarea') {
+              const fieldValue = data[_.get(field, 'name')]
+              const defaultTextareaRows = field.form.rows || 5
+              return <div key={fieldIdx} className='ui-form-field'>
+                <label className='ui-form-label' htmlFor={fieldId}>
+                  <div className='ui-flex'>
+                    <span className='ui-flex-1 ui-form-label'>{fieldLabel}</span>
+                    <span onClick={(e) => {
+                      const $el = document.getElementById(fieldId)
+                      if (screenfull.enabled) {
+                        $el.style.width = $el.style.height = '100%'
+                        screenfull.request($el)
+                      }
+                    }}>
+                      <i className='fa fa-arrows-alt'></i>
+                    </span>
+                  </div>
+                  <textarea {...field.form} rows={defaultTextareaRows} name={fieldName} defaultValue={fieldValue} id={fieldId}></textarea>
+                </label>
+              </div>
+            }
+            // radio
+            if (is.all.truthy(
+              _.isEqual(formType, 'radio'),
+              _.isEqual(fieldType, Boolean),
+              is.array(allowedValues),
+              _.castArray(allowedValues).length === 2,
+            )) {
+              const fieldValue = _.get(data, fieldName)
+              const formProps = {
+                ...formProps,
+                type: 'radio',
+                name: fieldName,
+                id: fieldId,
+              }
+              return <div key={fieldIdx} className='ui-form-field'>
+                <span className='ui-form-label'>{fieldLabel}</span>
+                {allowedValues.map((val, valIdx) => {
+                  return <label className='ui-mgr ui-form-radio-label' key={valIdx}>
+                    <input {...formProps} defaultValue={val} defaultChecked={fieldValue === val} />
+                    <span className='ui-mgl-sm'>{allowedLabels[valIdx] || val}</span>
+                  </label>
+                })}
+              </div>
+            }
+            if (is.all.truthy(
+              _.isEqual(formType, 'radio'),
+              is.any.truthy(
+                _.isEqual(fieldType, String),
+                _.isEqual(fieldType, Number),
+              ),
+              is.all.truthy(
+                is.array(allowedValues),
+                is.not.empty(allowedValues),
+              ),
+            )) {
+              const fieldValue = _.get(data, fieldName)
+              const valueName = (val) => field.type === Boolean ? (val ? '是' : '否') : val
+              return <div key={fieldIdx} className='ui-form-field'>
+                <span className='ui-form-label'>{fieldLabel}</span>
+                {field.allowedValues.map((val, idx) => {
+                  return <label className='ui-mgr ui-form-radio-label' key={idx}>
+                    <input {...field.form} type='radio' name={fieldName} defaultValue={val} defaultChecked={val === fieldValue} />
+                    <span className='ui-mgl-sm'>{valueName(val)}</span>
+                  </label>
+                })}
+              </div>
+            }
+            if (field.formType === 'radio' && field.ref) {
+              return <div key={fieldIdx} className='ui-form-field'>
+                <span className='ui-form-label'>{fieldLabel}</span>
+                {(relations[field.ref[1]] || []).map(v => {
+                  return <label className='ui-form-radio-label' key={v._id}>
+                    <input type='radio' name={fieldName} defaultValue={v._id} defaultChecked={v._id == data[_.get(field, 'name')]} />
+                    <span>{v[field.formOptionLabel]}</span>
+                  </label>
+                })}
+              </div>
+            }
+            // checkbox
+            if (is.all.truthy(
+              _.isEqual(formType, 'checkbox'),
+              _.isEqual(fieldType, Boolean),
+            )) {
+              const fieldValue = _.get(data, fieldName)
+              const formProps = {
+                ...formProps,
+                type: 'checkbox',
+                name: fieldName,
+                defaultValue: true,
+                defaultChecked: fieldValue,
+                id: fieldId,
+              }
+              return <div key={fieldIdx} className='ui-form-field'>
+                <label className='ui-form-label-wrapper' htmlFor={fieldId}>
+                  <span className='ui-form-label'>{fieldLabel}</span>
+                  <input {...formProps} />
+                </label>
+              </div>
+            }
+            if (is.all.truthy(
+              is.equal(formType, 'checkbox'),
+              is.any.truthy(
+                _.isEqual(fieldType, [String]),
+                _.isEqual(fieldType, [Number]),
+              ),
+              is.all.truthy(
+                is.array(allowedValues),
+                is.not.empty(allowedValues),
+              ),
+            )) {
+              const fieldValue = _.get(data, fieldName)
+              return <div key={fieldIdx} className='ui-form-field'>
+                <span className='ui-form-label'>{fieldLabel}</span>
+                {allowedValues.map((val, valIdx) => {
+                  const formProps = {
+                    ...formProps,
+                    type: 'checkbox',
+                    name: `${fieldName}[]`,
+                    defaultValue: val,
+                    defaultChecked: _.includes(fieldValue, val),
+                  }
+                  return <label className='ui-mgr ui-form-radio-label' key={valIdx}>
+                    <input {...formProps} />
+                    <span className='ui-mgl-sm'>{allowedLabels[valIdx] || val}</span>
+                  </label>
+                })}
+              </div>
+            }
+            if (is.all.truthy(
+              _.isEqual(fieldType, String),
+              _.isEqual(formType, 'select'),
+              is.propertyDefined(field, 'allowedValues')
+            )) {
+              const options = _.map(allowedValues, (val, valIdx) => ({
+                value: val,
+                label: val,
+              }))
+              const value = _.get(data, fieldName)
+              return <div key={fieldIdx} className='ui-form-field'>
+                <label className='ui-form-label' htmlFor={fieldId}>
+                  <span className='ui-form-label'>{fieldLabel}</span>
+                  <Select name={fieldName} options={options} value={value} />
+                </label>
+              </div>
+            }
+            if (is.all.truthy(
+              _.isEqual(fieldType, String),
+              _.isEqual(formType, 'select'),
+              is.propertyDefined(field, 'ref')
+            )) {
+              const refName = _.get(field, 'ref[1]')
+              const _relationData = relations[refName]
+              const fieldValue = data[fieldName] || _refId
+              return <div key={fieldIdx} className='ui-form-field'>
+                <label className='ui-form-label' htmlFor={fieldId}>
+                  <span className='ui-form-label'>{fieldLabel}</span>
+                  <Select name={fieldName} options={_relationData} valueKey='_id' labelKey={`${field.labelKey || 'name'}`} value={fieldValue} />
+                </label>
+              </div>
+            }
+            if (is.all.truthy(
+              _.isEqual(fieldType, [String]),
+              _.isEqual(formType, 'select'),
+              is.propertyDefined(field, 'ref')
+            )) {
+              const refName = _.get(field, 'ref[1]')
+              const _relationData = relations[refName]
+              const fieldValue = data[fieldName] || _refId
+              return <div key={fieldIdx} className='ui-form-field'>
+                <label className='ui-form-label' htmlFor={fieldId}>
+                  <span className='ui-form-label'>{fieldLabel}</span>
+                  <Select
+                    name={`${fieldName}[]`}
+                    options={_relationData}
+                    valueKey='_id'
+                    labelKey={`${field.labelKey || 'name'}`}
+                    value={fieldValue}
+                    multi={true}
+                  />
+                </label>
+              </div>
+            }
+            if (formType === 'file') {
+              // const _relationData = relations[field.ref[1]]() || []
+              return <div key={fieldIdx} className='ui-form-field'>
+                <label className='ui-form-label' htmlFor={`ui-form-field-${fieldIdx}`}>
+                  <span className='ui-form-label'>{field.label || fieldName}</span>
+                  <input type='file' />
+                </label>
+              </div>
+            }
+            if (formType === 'hidden') {
+              return <div key={fieldIdx}>
+                <input {...formProps} type='hidden' name={fieldName} />
+              </div>
+            }
+          })}
+        </div>)}
+      </div>
+    })}
+    <div className='ui-form-actions'>
+      <input type='submit' value='提交' />
+    </div>
+  </form>
+  return FormComponent
+}
+/Users/monsterstep/dev/repos/dashboard-app-maker/imports/components/form/select.js
+import 'react-select/dist/react-select.css'
+import 'react-virtualized/styles.css'
+import 'react-virtualized-select/styles.css'
+import VirtualizedSelect from 'react-virtualized-select'
+class Select extends Component {
+  constructor (props) {
+    super(props)
+    this.state = {}
+  }
+  render () {
+    const { name, options, labelKey, valueKey, value, multi } = this.props
+    const simpleValue = multi ? true : false
+    return <VirtualizedSelect
+      name={name}
+      options={options}
+      labelKey={labelKey}
+      valueKey={valueKey}
+      value={this.state.selectValue || value}
+      placeholder='请选择...'
+      multi={multi}
+      simpleValue={simpleValue}
+      onChange={(selectValue) => this.setState({ selectValue })}
+    />
+  }
+}
+export default Select
+/Users/monsterstep/dev/repos/dashboard-app-maker/imports/components/form/submit.js
+export default ({ evt, app, domain, action, _id, FilesCollectionCache, data, isRef }) => {
+  evt.preventDefault()
+  const form = evt.currentTarget
+  form.id = Random.id()
+  const doc = form2js(form.id)
+  const fileIds = _.map(FilesCollectionCache.find().fetch(), '_realFileId')
+  if (domain.enableFiles) {
+    doc.fileIds = data.fileIds ? [...data.fileIds, ...fileIds] : fileIds
+  }
+  Log(doc)
+  const collectionName = is.string(domain.isCollection) ? domain.isCollection : domain.name
+  const backUrl = `/${app.defaultRoutePrefix}/${domain.name}`
+  function onSuccess(err, resp) {
+    if (err) return
+    // if (action === 'new' || action === 'edit')
+      // FlowRouter.go(backUrl)
+    AppStatusMap.clear()
+  }
+  _id && !isRef ?
+    Meteor.call('update', collectionName, _id, doc, onSuccess) :
+    Meteor.call('insert', collectionName, doc, onSuccess)
+}
+/Users/monsterstep/dev/repos/dashboard-app-maker/imports/components/grid/files.js
+import agGrid from 'ag-grid'
+class index extends Component {
+  componentDidMount() {
+    const { props, getGridProps } = this
+    const { app, data: rowData } = props
+    const { domainsIndex } = app
+    const { files } = domainsIndex
+    const { gridFields } = files
+    const columnDefs = _.chain(gridFields)
+      .reject('as')
+      .map(getGridProps)
+      .value()
+    this.gridOptions = {
+      columnDefs,
+      rowData,
+      enableColResize: true,
+      enableSorting: true,
+      unSortIcon: true,
+      enableFilter: true,
+      onGridReady(params) {
+        params.api.sizeColumnsToFit()
+      },
+      rowSelection: 'multiple',
+      suppressRowClickSelection: true,
+    }
+    const grid = document.querySelector('.ui-ag-grid')
+    new agGrid.Grid(grid, this.gridOptions)
+  }
+  componentWillUpdate(nextProps, nextState) {
+    this.gridOptions.api.setRowData(nextProps.data)
+  }
+  componentWillUnmount() {
+    this.gridOptions.api.destroy()
+  }
+  getGridProps(field) {
+    const { grid } = field
+    return grid
+  }
+  render() {
+    return <div className="ui-pdtb ui-ag-grid ui-ag-grid-files ag-bootstrap"></div>
+  }
+}
+export default index
+/Users/monsterstep/dev/repos/dashboard-app-maker/imports/components/grid/grid.js
+import {
+  renderValue,
+} from '/imports/utils'
+const agGrid = require('ag-grid-enterprise')
+agGrid.LicenseManager.setLicenseKey('ag-Grid_EvaluationLicense_100Devs27_January_2018__MTUxNzAxMTIwMDAwMA==8c9dff17620c1f17c7c34cb69061acb6')
+import { AgGridReact } from 'ag-grid-react'
+function toggleForm({ event, domain, action, _id }) {
+  event.preventDefault()
+  AppStatusMap.clear()
+  AppStatusMap.set({
+    domain,
+    action,
+    _id,
+  })
+}
+export default ({ app, domain, heads, data: rowData, height }) => {
+    let api = null
+    const viewColumn = {
+      headerName: '查看',
+      suppressMenu: true,
+      suppressSorting: true,
+      suppressSizeToFit: false,
+      maxWidth: 50,
+      cellStyle: { textAlign: 'center', },
+      cellRenderer() {
+        return `<i class='fa fa-eye'></i>`
+      },
+      onCellClicked(params) {
+        const _id = params.data._id
+        FlowRouter.go(`/${app.defaultRoutePrefix}/${domain.name}/view?_id=${_id}`)
+      }
+    }
+    const duplicateColumn = {
+      headerName: '复制',
+      suppressMenu: true,
+      suppressSorting: true,
+      suppressSizeToFit: false,
+      maxWidth: 50,
+      cellStyle: { textAlign: 'center', },
+      cellRenderer() {
+        return `<i class='fa fa-copy'></i>`
+      },
+    }
+    const editColumn = {
+      headerName: '编辑',
+      suppressMenu: true,
+      suppressSorting: true,
+      suppressSizeToFit: false,
+      maxWidth: 50,
+      cellStyle: { textAlign: 'center', },
+      cellRenderer() {
+        return `<i class='fa fa-edit'></i>`
+      },
+      onCellClicked(params) {
+        const { event } = params
+        const action = 'edit'
+        const _id = params.data._id
+        if (domain._modalForm) {
+          toggleForm({
+            event,
+            domain,
+            _id,
+            action,
+          })
+        } else {
+          FlowRouter.go(`/${app.defaultRoutePrefix}/${domain.name}/edit?_id=${_id}`)
+        }
+      },
+    }
+    const removeColumn = {
+      headerName: '删除',
+      suppressMenu: true,
+      suppressSorting: true,
+      suppressSizeToFit: false,
+      maxWidth: 50,
+      cellStyle: {
+        textAlign: 'center',
+      },
+      cellRenderer() {
+        return `<i class='fa fa-trash'></i>`
+      },
+      onCellClicked(params) {
+        const collectionName = is.string(domain.isCollection) ? domain.isCollection : domain.name
+        confirm(`确定要删除吗？\n${JSON.stringify(params.data, null, 4)}`) &&
+        Meteor.call('remove', collectionName, params.data._id)
+      },
+    }
+    const checkboxColumn = {
+      headerName: '多选',
+      suppressMenu: true,
+      suppressSorting: true,
+      suppressSizeToFit: false,
+      maxWidth: 50,
+      checkboxSelection: true,
+      cellStyle: {
+        textAlign: 'center',
+      },
+    }
+
+    // console.time()
+    let headGrids = _.chain(heads)
+      .filter('grid')
+      .map('grid')
+      .value()
+    // console.timeEnd()
+    if (domain.gridOrder) {
+      const headsIndex = _.keyBy(heads, 'name')
+      headGrids = _.map(domain.gridOrder, d => headsIndex[d].grid)
+    }
+    const columnDefs = [
+      ...headGrids,
+      viewColumn,
+      // duplicateColumn,
+      editColumn,
+      removeColumn,
+      // checkboxColumn,
+    ]
+    this.gridOptions = {
+      columnDefs,
+      rowData,
+      enableColResize: true,
+      enableSorting: true,
+      unSortIcon: true,
+      enableFilter: true,
+      rowSelection: 'multiple',
+      suppressRowClickSelection: true,
+      onModelUpdated() {
+        api && api.sizeColumnsToFit()
+      },
+      enableStatusBar: true,
+      enableRangeSelection: true,
+      // pivotMode: true,
+    }
+    return <div className='ui-ag-grid ag-bootstrap' style={{ height: height ? height : '100%' }}>
+      <AgGridReact
+        columnDefs={this.gridOptions.columnDefs}
+        rowData={this.gridOptions.rowData}
+        onGridReady={(params) => {
+          api = params.api
+          api.sizeColumnsToFit()
+        }}
+        enableSorting="true"
+        enableFilter="true"
+        gridOptions={this.gridOptions}
+      />
+    </div>
+}
+/Users/monsterstep/dev/repos/dashboard-app-maker/imports/components/home/home.js
+export default ({ app }) => {
+  return () => <div>
+    <h3>home</h3>
+  </div>
+}
+/Users/monsterstep/dev/repos/dashboard-app-maker/imports/components/layout/404.js
+export default ({ app, domain }) => {
+  return <div>
+    <h1>该页面不存在</h1>
+    <a href='/'>返回首页</a>
+  </div>
+}
+/Users/monsterstep/dev/repos/dashboard-app-maker/imports/components/layout/action.js
+import {
+  FormTracker,
+} from '/imports/trackers'
+import {
+  defaultDomainComponent,
+  FormComponent,
+} from '/imports/components'
+export default ({ app, domain, _id, action, $ReactiveFilters, FilesCollectionCache }) => {
+  return {
+    new() {
+      const FormContainer = Container(FormTracker({ app, domain, action, FilesCollectionCache }))(FormComponent)
+      return <div className='ui-flex-1 ui-padded ui-flex-swag-scroll'>
+        <FormContainer />
+      </div>
+    },
+    edit() {
+      const FormContainer = Container(FormTracker({ app, domain, _id, action, FilesCollectionCache }))(FormComponent)
+      return <div className='ui-flex-1 ui-padded ui-flex-swag-scroll'>
+        <FormContainer />
+      </div>
+    },
+    view() {
+      const DefaultDomainComponent = defaultDomainComponent({ app, domain, _id, action, $ReactiveFilters, FilesCollectionCache })
+      return <div className='ui-padded ui-flex-swag-scroll'>
+        <DefaultDomainComponent />
+      </div>
+    },
+  }
+}
+/Users/monsterstep/dev/repos/dashboard-app-maker/imports/components/layout/actionbar.js
+import {
+  FormTracker,
+} from '/imports/trackers'
+import {
+  ModalComponent,
+  FormComponent,
+} from '/imports/components'
+const ActionbarBtnComponent = ({ app, domain, _id, action, isRef }) => {
+  action = _id ? 'edit' : 'new'
+  const icon = _id ? 'fa-edit' : 'fa-plus-circle'
+  const actionUrl = `/${app.defaultRoutePrefix}/${domain.path}/new`
+  return <a className='ui-flex-row ui-flex-center ui-padded ui-bar-actions-item' href='#' onClick={(e) => {
+    e.preventDefault()
+    domain._modalForm ?
+      toggleForm(domain, action) :
+      FlowRouter.go(actionUrl)
+  }}>
+    <i className={`fa fa-2x ${icon}`}></i>
+    <small>{domain.label}</small>
+  </a>
+  function toggleForm(domain, action) {
+    AppStatusMap.clear()
+    AppStatusMap.set({
+      domain,
+      action,
+      isRef,
+    })
+  }
+}
+const ActionbarComponent = ({ app, domain, action, _id, appStatusMap, refDomains, FilesCollectionCache }) => {
+  const FormContainer = Container(FormTracker({ app, domain, action, _id, FilesCollectionCache }))(FormComponent)
+  return !domain.isFiles && <div className='ui-wrapper-actionbar'>
+    <div className='ui-flex-row ui-bar-actions'>
+      <div className='ui-flex-1'></div>
+      <div className='ui-bar-actions-group'>
+        <ActionbarBtnComponent app={app} domain={domain} action={action} _id={_id} />
+        {(action === 'view') && refDomains.map((refDomain, idx) => <ActionbarBtnComponent key={idx} app={app} domain={refDomain} action={action} isRef={true} />)}
+      </div>
+    </div>
+    {appStatusMap.action && <ModalComponent>
+      <FormContainer />
+    </ModalComponent>}
+  </div>
+}
+export default ActionbarComponent
+/Users/monsterstep/dev/repos/dashboard-app-maker/imports/components/layout/blank.js
+export default ({ Main }) => <Main />
+/Users/monsterstep/dev/repos/dashboard-app-maker/imports/components/layout/breadcrumbs.js
+const breadcrumbsComponent = ({ urls }) => <div className='ui-breadcrumbs'>
+  <nav className='ui-flex-row'>
+    {urls.map(({ label, icon, href, isSep }, itemIdx) => {
+      return !isSep ? <a key={itemIdx} href={href}>
+        {icon && <i className={`${icon} fa-1x ui-mgr-xs`} style={{ fontSize: '100%' }}></i>}
+        <span>{label}</span>
+      </a> : <span key={itemIdx} >
+        <i className="fa fa-caret-right ui-sep"></i>
+      </span>
+    })}
+  </nav>
+</div>
+const index = ({ app, action }) => {
+  const { enableSystem, domainsIndex, defaultRoutePrefix } = app
+  const currentDomainName = FlowRouter.getParam('name')
+  const trackCurrentRoute = (props, onData) => {
+    const currentUrl = FlowRouter.current().path
+    const urlToArray = _.chain(currentUrl)
+      .split('/')
+      .compact()
+      .drop()
+      .unshift('home')
+      .value()
+    if (currentDomainName !== 'system' && _.includes(enableSystem, currentDomainName))
+      urlToArray.splice(1, 0, 'system')
+    const fillSeps = _.fill(Array(urlToArray.length), '/')
+    const flattenedUrl = _.chain(urlToArray)
+      .zip(fillSeps)
+      .flatten()
+      .dropRight()
+      .value()
+    const urls = _.map(flattenedUrl, url => {
+      const isSep = url === '/'
+      if (isSep) return { isSep: true }
+      const targetDomain = domainsIndex[url]
+      if (targetDomain) {
+        const { label, name, icon, path, isHome } = targetDomain
+        const href = isHome ? '/' : `/${defaultRoutePrefix}/${path}`
+        return { label, name, icon, href }
+      }
+      const actions = {
+        new: { label: '新增', href: currentUrl, icon: 'fa fa-plus-circle' },
+        view: { label: '查看', href: currentUrl, icon: 'fa fa-eye' },
+        edit: { label: '编辑', href: currentUrl, icon: 'fa fa-edit' }
+      }
+      return actions[action]
+    })
+    onData(null, { urls })
+  }
+  return Container(trackCurrentRoute)(breadcrumbsComponent)
+}
+export default index
+/Users/monsterstep/dev/repos/dashboard-app-maker/imports/components/layout/current.user.js
+import { dropdownComponent as DropdownComponent } from '/imports/components'
+export default ({ app, domain }) => {
+  // props
+  const menu = [
+    {
+      text: '个人档案',
+    },
+    {
+      text: '注销',
+      onClick() {
+        Meteor.logout(err => !err && FlowRouter.go('/'))
+      },
+    },
+  ]
+  // component
+  const component = ({ user = {} }) => {
+    const name = user.name || user.username
+    return <DropdownComponent
+      text={name}
+      href='/'
+      menu={menu}
+    />
+  }
+  // tracker
+  function tracker(props, onData) {
+    const user = Meteor.user()
+    onData(null, { user })
+  }
+  // export container
+  return Container(tracker)(component)
+}
+/Users/monsterstep/dev/repos/dashboard-app-maker/imports/components/layout/dev.js
+import { dropdownComponent as DropdownComponent } from '/imports/components'
+export default ({ app, domain }) => {
+  // props
+  const menu = [
+    {
+      text: '重置所有数据',
+      onClick() { Meteor.call('collections.reset') },
+    },
+    {
+      text: '清空所有数据',
+      onClick() { Meteor.call('collections.empty') },
+    },
+    {
+      text: '清空控制台',
+      onClick() { console.clear() },
+    },
+    {
+      text: '注销',
+      onClick() { Meteor.logout(err => !err && FlowRouter.go('/')) },
+    },
+  ]
+  // component
+  const component = () => {
+    return <DropdownComponent
+      text='开发'
+      href='/'
+      menu={menu}
+    />
+  }
+  return component()
+}
+/Users/monsterstep/dev/repos/dashboard-app-maker/imports/components/layout/help.js
+import { HookComponent} from '/imports/components'
+export const toggler = new ReactiveMap({
+  show: false
+})
+export const component = ({  domain, toggleStatus  }) => {
+  const { fields = [] } = domain
+  return toggleStatus ? <div className='ui-flex-row ui-help'>
+    <div className='ui-help-close' onClick={closeHelpComponent}>关闭</div>
+    <div className='ui-flex-column ui-flex-1'>
+      <div className='ui-flex-1 ui-pd-md ui-flex-swag-scroll'>
+        <div className='ui-mgb'>
+          <h3>{domain.label}使用帮助</h3>
+          <p>{domain.desc}</p>
+        </div>
+        {fields.map((field, fieldIdx) => {
+          return <div key={fieldIdx} className='ui-mgb'>
+            <h4>{field.label}</h4>
+            <p>{field.desc || '没有描述'}</p>
+          </div>
+        })}
+      </div>
+    </div>
+    <div className='ui-flex-1'></div>
+    <HookComponent
+      didMount={() => {
+        $('.ui-wrapper').removeClass('ui-padded-top')
+        $('.ui-bar-top').removeClass('ui-fixed')
+        $('body').css({ overflow: 'hidden' })
+      }}
+      willUnmount={() => {
+        $('.ui-wrapper').addClass('ui-padded-top')
+        $('.ui-bar-top').addClass('ui-fixed')
+        $('body').css({ overflow: 'auto' })
+      }}
+    />
+  </div> : null
+}
+function closeHelpComponent(e) {
+  e.preventDefault()
+  toggler.set('show', false)
+}
+export default function ({ app, domain }) {
+  const defaultTracker = (props, onData) => {
+    const toggleStatus = toggler.get('show')
+    onData(null, { domain, toggleStatus })
+  }
+  return Container(defaultTracker)(component)
+}
+/Users/monsterstep/dev/repos/dashboard-app-maker/imports/components/layout/index.js
+
+/Users/monsterstep/dev/repos/dashboard-app-maker/imports/components/layout/layout.js
+import helpComponent from './help'
+import TopComponent from './top'
+import LeftComponent from './left'
+import {loginComponent as LoginComponent} from '../'
+import {
+  BreadcrumbsComponent,
+} from '../'
+export default ({ app, domain, action }) => {
+  const BreadcrumbsContainerComponent = BreadcrumbsComponent({ app, action })
+  const HelpComponent = helpComponent({ app, domain })
+  const defaultTracker = (props, onData) => {
+    if (app.enableLogin) {
+      const userId = Meteor.userId()
+      if (userId) {
+        const user = Meteor.user()
+        if (user) {
+          Meteor.subscribe('collections.global').ready() ?
+            onData(null, { userId, user }) :
+            onData(null, { userId })
+        } else {
+          onData(null, null)
+        }
+      } else
+        onData(null, {})
+    } else {
+      // const loaded = Meteor.subscribe('___global:all:default').ready()
+      const loaded = true
+      if (loaded)
+        onData(null, {})
+      else
+        onData(null, null)
+    }
+  }
+  const defaultLayout = ({ Main, user, userId, toggleHelpComponent }) => {
+    const layout = <div className='ui-flex-fhvp ui-flex-column ui-wrapper-layout'>
+      {app.enableHelp && <HelpComponent />}
+      <TopComponent app={app} />
+      <div className='ui-flex-row ui-flex-1 ui-wrapper ui-padded-top'>
+        <LeftComponent app={app} domain={domain} />
+        <div className='ui-flex-column ui-flex-1 ui-wrapper-main'>
+          <BreadcrumbsContainerComponent />
+          {Main()}
+        </div>
+      </div>
+    </div>
+    if (app.enableLogin) {
+      return userId ? layout : <LoginComponent app={app} />
+    } else {
+      return layout
+    }
+  }
+  return Container(defaultTracker)(defaultLayout)
+}
+/Users/monsterstep/dev/repos/dashboard-app-maker/imports/components/layout/left.js
+export default ({ app, domain }) => {
+  const { enableSystem, domains, defaultRoutePrefix } = app
+  const currentDomainName = FlowRouter.getParam('name')
+  return <div className='ui-flex-column ui-sidebar ui-sidebar-left'>
+    {domains.map((d, idx) => {
+      const { onNav, path, isHome, label, icon, name } = d
+      const isActive = name === domain.name ? 'active' : ''
+      const isActiveInSystem = name === 'system' &&
+        currentDomainName !== 'system' &&
+        _.includes(enableSystem, currentDomainName) ? 'active' : ''
+      const className = `ui-flex-column ui-flex-center ${isActive} ${isActiveInSystem}`
+      const href = isHome ? '/' : `/${defaultRoutePrefix }/${path}`
+      return onNav !== false ? <div key={idx}>
+        <a className={className} href={href}>
+          {icon && <i className={`${icon} fa-2x`} style={{ marginBottom: 8 }}></i>}
+          <span>{label}</span>
+        </a>
+      </div> : null
+    })}
+  </div>
+}
+/Users/monsterstep/dev/repos/dashboard-app-maker/imports/components/layout/top.js
+import DevMenuComponent from './dev'
+import { toggler as helperComponentToggler } from './help'
+import { currentUserComponent } from '/imports/components'
+export default ({ app, domain }) => {
+  const CurrentUserComponent = currentUserComponent({ app, domain })
+  const {
+    name,
+    enableDevMenu,
+  } = app
+  // component
+  return <div className='ui-flex-row ui-fixed ui-bar-top'>
+    <a className='ui-flex-center ui-pd-lr ui-logo' href='/'>{name}</a>
+    <div className='ui-flex-1'></div>
+    <div className='ui-flex-row ui-topbar-group-right'>
+      {enableDevMenu && <DevMenuComponent />}
+      <a className='ui-flex-center ui-pd-lr' href='#' onClick={toggleHelpComponent}>
+        <i className='fa fa-question-circle ui-mgr-sm'></i> 帮助
+      </a>
+      <CurrentUserComponent />
+    </div>
+  </div>
+  // events
+  function toggleHelpComponent(e) {
+    e.preventDefault()
+    const status = !helperComponentToggler.get('show')
+    helperComponentToggler.set('show', status)
+  }
+}
+/Users/monsterstep/dev/repos/dashboard-app-maker/imports/components/login/login.js
+export default ({ app }) => {
+  const { enableRegister } = app
+  return <div className='ui-flex-fhvp ui-flex-center ui-wrapper-login-background'>
+    <div className='ui-flex-row ui-wrapper-login'>
+      <div className='ui-flex-1 ui-login-meta'>adasdasd</div>
+      <div className='ui-flex-column ui-login-form'>
+        <div className='ui-flex-1'></div>
+        <div className='ui-flex-2 ui-flex-center ui-padded'>
+          <form className='ui-flex-column ui-form-group' id='ui-form-login' onSubmit={login}>
+            <input type='text' name='username' defaultValue='dev' />
+            <input type='password' name='password' defaultValue='dev' />
+            <input type='submit' value='登录' />
+            {enableRegister && <a href='/register'>注册</a>}
+          </form>
+        </div>
+        <div className='ui-flex-1'></div>
+      </div>
+    </div>
+  </div>
+  function login(e) {
+    e.preventDefault()
+    const { username, password } = Form2js('ui-form-login')
+    Meteor.loginWithPassword(username, password, onLogin)
+  }
+  function onLogin(err, resp) {
+    err => !err && FlowRouter.go('/')
+  }
+}
+/Users/monsterstep/dev/repos/dashboard-app-maker/imports/components/register/register.js
+export default () => {
+  return <div>
+    <form id='ui-form-register' onSubmit={createUser}>
+      <input type='text' name='username' required />
+      <input type='password' name='password' required />
+      <input type='submit' value='注册' />
+      <a href='/'>登录</a>
+    </form>
+  </div>
+  function createUser(e) {
+    e.preventDefault()
+    const user = Form2js('ui-form-register')
+    Accounts.createUser(user, onCreateUser)
+  }
+  function onCreateUser (err, resp) {
+    !err && FlowRouter.go('/')
+  }
+}
+/Users/monsterstep/dev/repos/dashboard-app-maker/imports/components/system/index.js
+export default ({ app }) => () => {
+  const { enableSystem, systemItemsPerRow, domainsIndex, defaultRoutePrefix } = app
+  const systemItemsInRows = _.chunk(enableSystem, systemItemsPerRow)
+  return <div className='ui-system-grid'>
+    {systemItemsInRows.map((systemItems, systemItemsIdx) => {
+      if (systemItems.length < systemItemsPerRow) {
+        const fillLength = systemItemsPerRow - systemItems.length
+        systemItems = [...systemItems, ...Array(fillLength).fill(null)]
+      }
+      return <div key={systemItemsIdx} className='ui-flex-row'>
+        {systemItems.map((domainName, itemIdx) => {
+          const domain = domainsIndex[domainName] || {}
+          const { label, name, icon, path } = domain
+          return label ? <a key={itemIdx} href={path} className='ui-flex-column ui-flex-center ui-flex-1 ui-pdtb-lg'>
+            <span className='ui-mgb'>
+              <i className={`${icon} fa-3x`}></i>
+            </span>
+            <span>{label}</span>
+          </a> : <a key={itemIdx} className='ui-flex-1 ui-system-item-empty'></a>
+        })}
+      </div>
+    })}
+  </div>
+}
+/Users/monsterstep/dev/repos/dashboard-app-maker/imports/core/index.js
+export default app => {
+  // 检查配置文件
+  Meteor.isDevelopment && require('./check')(app)
+  // 分配默认属性
+  require('./defaults')(app)
+  // 启用核心域。。。
+  require('./domains')(app)
+  // config 分配默认值
+  require('./normalizations')(app)
+  require('./methods')(app)
+  require('./hooks')(app)
+  if (Meteor.isServer) {
+    require('./accounts')(app)
+    require('./publications')(app)
+    Meteor.isDevelopment && require('/imports/dev')(app)
+  }
+}
+/Users/monsterstep/dev/repos/dashboard-app-maker/imports/core/accounts/index.js
+export default app => {
+  Accounts.onCreateUser((option, user) => {
+    const omitFields = _.omit(option, ['id', 'email', 'password'])
+    return _.extend(user, omitFields)
+  })
+}
+/Users/monsterstep/dev/repos/dashboard-app-maker/imports/core/check/index.js
+export default config => {
+  if (is.not.json(config))
+    throw new Error(`your app config should be an object...`)
+  const {
+    domains,
+  } = config
+  if (is.not.array(domains))
+    throw new Error('domains should be an array filled with objects...')
+  if (is.empty(domains))
+    throw new Error(`"domains" is empty...`)
+  const illegalTypeDomains = _.reject(domains, is.json)
+  if (illegalTypeDomains.length)
+    throw new Error(`found illegal type in domains, ${illegalTypeDomains.join()}`)
+  const unnamedDomains = _.reject(domains, 'name')
+  if (unnamedDomains.length)
+    throw new Error(`found unnamed domains, ${stringify(unnamedDomains)}`)
+  const checkIllegalTypeByDomainName = _.every(domains, _.conforms({ name: is.string }))
+  if (is.falsy(checkIllegalTypeByDomainName))
+    throw new Error(`domain's name should be a string...`)
+  const countByDomainName = _.countBy(domains, 'name')
+  const failedDomains = _.pickBy(countByDomainName, _.unary(_.partialRight(_.gt, 1)))
+  if (is.not.empty(failedDomains))
+    throw new Error(`found duplicate domain's name ${stringify(failedDomains)}`)
+  const uniqueDomainNames = _.chain(domains)
+    .map('name')
+    .uniq()
+    .value()
+  const referencedDomains = _.chain(domains)
+    .filter(_.conforms({ isCollection: is.string }))
+    .value()
+  const referencedDomainDoesntExist = _.reject(referencedDomains, _.partialRight(_.includes, uniqueDomainNames))
+  if (is.not.empty(referencedDomainDoesntExist))
+    throw new Error(`can't find referenced domain on these domains ${stringify(referencedDomainDoesntExist)}`)
+  const rejectDomainFieldsIsArray = _.chain(domains)
+    .reject(_.conforms({ fields: is.array }))
+    .filter('fields')
+    .value()
+  if (is.not.empty(rejectDomainFieldsIsArray))
+    throw new Error(`domain's fields should be an array ${stringify(rejectDomainFieldsIsArray)}`)
+  const domainsHaveIllegalTypeOfFields = _.chain(domains)
+    .filter(_.conforms({ fields: _.partialRight(_.some, is.not.json) }))
+    .map(({ name, fields }) => ({ name, fields: _.filter(fields, is.not.json) }))
+    .value()
+  if (is.not.empty(domainsHaveIllegalTypeOfFields))
+    throw new Error(`domains' fields have found wrong type, please remove them ${stringify(domainsHaveIllegalTypeOfFields)}`)
+}
+function stringify(ctx) { return JSON.stringify(ctx, null, 2) }
+/Users/monsterstep/dev/repos/dashboard-app-maker/imports/core/defaults/index.js
+import { defaultAppProps } from '/imports/default'
+export default app => _.defaultsDeep(app, defaultAppProps)
+/Users/monsterstep/dev/repos/dashboard-app-maker/imports/core/hooks/index.js
+export default app => {
+  _.each(app.domains, ({ isCollection, collection, ...domain }) => {
+    if (isCollection !== true) return
+    collection.before.insert(function (userId, doc) {
+      doc = _.defaults(doc, {
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        createdBy: userId,
+        updatedBy: userId,
+      })
+    })
+    // collection.before.update()
+    // collection.before.remove()
+  })
+}
+/Users/monsterstep/dev/repos/dashboard-app-maker/imports/core/methods/index.js
+export default app => {
+  Meteor.methods({
+    insert(collectionName, doc) {
+      if (collectionName === 'users') return Accounts.createUser(doc)
+      console.log(collectionName, doc)
+      return app.collections[collectionName].insert(doc)
+    },
+    update(collectionName, _id, doc) {
+      if (collectionName === 'users') {
+        if (doc.username) Accounts.setUsername(_id, doc.username)
+        if (doc.password) Accounts.setPassword(_id, doc.password)
+        return app.collections[collectionName].update(_id, {
+          $set: _.omit(doc, ['username', 'password'])
+        })
+      }
+      console.log('update', collectionName, _id, doc)
+      return app.collections[collectionName].update(_id, { $set: doc })
+    },
+    remove(collectionName, _id) {
+      return app.collections[collectionName].remove(_id)
+    },
+  })
+}
+/Users/monsterstep/dev/repos/dashboard-app-maker/imports/core/normalizations/add.default.domains.js
+import {
+  defaultDomainHome,
+  defaultDomainSystem,
+} from '/imports/default'
+export default app => {
+  if (!_.some(app.domains, { isHome: true }))
+    app.domains.unshift(defaultDomainHome)
+  if (app.enableSystem)
+    app.domains.push(defaultDomainSystem)
+}
+/Users/monsterstep/dev/repos/dashboard-app-maker/imports/core/normalizations/assign.domains.props.js
+import {
+  defaultDomainProps,
+} from '/imports/default'
+export default app => {
+  _.each(app.domains, domain => {
+    _.defaults(domain, defaultDomainProps)
+    const { name, label, path } = domain
+    domain.label = _.defaultTo(label, name)
+    domain.path = _.defaultTo(path, name)
+    if (_.includes(app.enableSystem, name))
+      domain.onNav = false
+    if (is.all.truthy(
+      is.truthy(domain.isCollection),
+      is.not.propertyDefined(domain, 'collection'),
+    )) {
+      app.collections[name] = domain.collection = new Mongo.Collection(name)
+    } else {
+      app.collections[name] = domain.collection
+    }
+  })
+}
+/Users/monsterstep/dev/repos/dashboard-app-maker/imports/core/normalizations/config.collector.js
+export default app => {
+  // 索引 mongo collections
+  app.collectionsIndex = app.collections
+  // 索引 domains
+  app.domainsIndex = _.keyBy(app.domains, 'name')
+  app.domainsWithQuerys = _.filter(app.domains, 'collection')
+}
+/Users/monsterstep/dev/repos/dashboard-app-maker/imports/core/normalizations/domain.collector.js
+export default (app) => {
+  const {
+    domains,
+  } = app
+  app.hasCollections = _.filter(domains, domain => _.get(domain, 'collection._name') )
+  app.hasCollectionsIndex = _.keyBy(app.hasCollections, 'name')
+  _.each(domains, domain => {
+    domain.allRefDomains = _.filter(domains, { isCollection: domain.name })
+    domain.allRefDomainsFields = _.chain(domain.allRefDomains).map('fields').flatten().value()
+    domain.allFields = _.unionBy(domain.fields, domain.allRefDomainsFields, 'name')
+    domain.allFieldsIndex = _.keyBy(domain.allFields, 'name')
+    domain.hasOthers = {}
+    domain.gridFields = _.filter(domain.fields, 'onGrid')
+    domain.filterEnabledFields = _.filter(domain.fields, 'enableFilter')
+  })
+}
+/Users/monsterstep/dev/repos/dashboard-app-maker/imports/core/normalizations/domain.relations.js
+export default (app) => {
+  _.each(app.domains, domain => {
+    if (!_.get(domain, 'collection._name'))
+      return console.log(`skip make relationships for ${domain.name}`)
+    const { _name } = domain.collection
+    const _relations = _.chain(app.domains)
+      .filter(d => findRef(d.fields, _name))
+      .map(d => mapRef(d, _name))
+      .compact()
+      .value()
+    const _findRefsOnSelf = _.chain(domain.fields)
+      .filter('ref')
+      .map(f => {
+        const refDomainName = _.get(f, 'ref[1]')
+        const refDomain = app.domainsIndex[refDomainName]
+        return {
+          label: refDomain.label,
+          name: refDomain.name,
+          field: refDomainName,
+          domain: refDomain,
+        }
+      })
+      .value()
+    domain.relations = [..._relations, ..._findRefsOnSelf]
+  })
+}
+function findRef(fields, name) {
+  return _.some(fields, f => {
+    const refName = _.get(f, 'ref[1]')
+    return refName === name
+  })
+}
+function mapRef(domain, name) {
+  const refField = _.find(domain.fields, field => {
+    return _.get(field, 'ref[1]') === name
+  })
+  return {
+    label: domain.label,
+    name: domain.name,
+    field: refField.name,
+    domain: domain,
+  }
+}
+/Users/monsterstep/dev/repos/dashboard-app-maker/imports/core/normalizations/field.default.props.js
+import {
+  smartDefaultQuery,
+  manipulateFormProps,
+} from '/imports/utils'
+import {
+  defaultFieldProps,
+  defaultFieldFileIds,
+} from '/imports/default'
+export default (app) => {
+  app.allFields = _.chain(app.domains)
+    .map('fields')
+    .flatten()
+    .compact()
+    .value()
+  _.each(app.allFields, fillProps)
+  function fillProps(field) {
+    const {
+      label,
+      name,
+      type,
+      defaultValue,
+      autoValue,
+      onGrid,
+      ref,
+    } = field
+    field.app = app
+    // as is reserved keyword
+    field.label = label || name || field.as
+    // 保持关系的 id 字段不需要在表格上单独显示一列
+    // 所以这个应该发生在覆盖默认 props 之前
+    if (ref)
+      field.onGrid = _.defaultTo(onGrid, false)
+    if (is.any.truthy(
+      _.isEqual(type, [String]),
+      _.isEqual(type, [Number]),
+    )) {
+      field.defaultValue = defaultValue ? defaultValue : []
+    }
+    if (_.isEqual(type, Date)) {
+      field.defaultValue = defaultValue ? defaultValue : new Date()
+      field.onGrid = field.onGrid || function (d) { return moment(d.value).format('YYYY.M.D') }
+    }
+    field.autoValue = autoValue ? autoValue : function () {
+      if (!this.value) return field.defaultValue
+    }
+    _.defaultsDeep(field, defaultFieldProps)
+    if (field.onGrid) {
+      field.grid = {
+        headerName: field.label,
+      }
+      if (name || field.as)
+        field.grid.field = name || field.as
+      if (is.function(field.onGrid))
+        field.grid.cellFormatter = field.onGrid
+    }
+  }
+  _.each(app.domains, domain => {
+    if (is.truthy(domain.enableFiles))
+      domain.fields.push(defaultFieldFileIds)
+    // 给域中的字段默认属性
+    _.each(domain.fields, (field, fieldIdx) => {
+      if (_.get(field, 'form.type') !== 'hidden')
+        field.row = field.row || fieldIdx + 1
+    })
+    // process fields form props
+    _.each(domain.fields, manipulateFormProps)
+  })
+}
+/Users/monsterstep/dev/repos/dashboard-app-maker/imports/core/normalizations/index.js
+import { defaultAppProps } from '/imports/default'
+export default app => {
+  _.defaultsDeep(app, defaultAppProps)
+  // 分类默认域属性
+  require('./assign.domains.props')(app)
+  require('./add.default.domains')(app)
+  // 配置级收集器
+  require('./config.collector')(app)
+  // 如果域属于某个已有域
+  require('./refers')(app)
+  // 操作 domain fields
+  require('./field.default.props')(app)
+  require('./query')(app)
+  require('./domain.collector.js')(app)
+  require('./domain.relations.js')(app)
+}
+/Users/monsterstep/dev/repos/dashboard-app-maker/imports/core/normalizations/query.js
+export default app => {
+  _.each(app.domainsWithQuerys, smartDefaultQuery)
+}
+// 从域创建查询
+function smartDefaultQuery(domain) {
+  const fields = _.castArray(domain.fields)
+  const defaultQuery = domain.query || {}
+  const queryWithoutFieldQuery = _.chain(fields)
+    .filter(field => is.undefined(field.query))
+    .map(field => [field.name || field.as, 1])
+    .fromPairs()
+    .value()
+  const queryWithFieldQuery = _.chain(fields)
+    .filter(field => is.json(field.query))
+    .map(mergeNameWithQuery)
+    .reduce(_.extend)
+    .value()
+  domain.query = Dot.object({
+    ...defaultQuery,
+    ...queryWithoutFieldQuery,
+    ...queryWithFieldQuery,
+  })
+}
+function mergeNameWithQuery({ name, query }) {
+  const queryKeys = _.chain(query)
+    .keys()
+    .map(_.toPath)
+    .value()
+  return _.some(queryKeys, key => key[0] === name) ? query : { [name]: 1, ...query }
+}
+/Users/monsterstep/dev/repos/dashboard-app-maker/imports/core/normalizations/refers.js
+export default app => {
+  app.referencedDomains = _.filter(app.domains, _.conforms({ isCollection: is.string }))
+  _.each(app.referencedDomains, domain => {
+    const targetDomain = app.domainsIndex[domain.isCollection]
+    domain.collection = targetDomain.collection
+    if (_.every([domain.fields, domain.pick, domain.omit], _.isEmpty)) {
+      domain.fields = targetDomain.fields
+    } else {
+      let anticipatedFields = []
+      const { fields, pick, omit } = domain
+      if (pick || omit) {
+        _.each(domain, (props, expect) => {
+          if (expect === 'pick')
+            anticipatedFields = _.concat(anticipatedFields, props)
+          if (expect === 'omit')
+            anticipatedFields = _.pullAll(anticipatedFields, props)
+        })
+      }
+      domain.fields = _.chain(targetDomain.fields)
+        .filter(({ name, as }) => _.includes(anticipatedFields, name || as))
+        .concat(fields)
+        .value()
+    }
+  })
+}
+/Users/monsterstep/dev/repos/dashboard-app-maker/imports/core/publications/index.js
+export default app => {
+  const {
+    enableLogin
+  } = app
+  enableLogin && Meteor.publish(null, function () {
+    if (!this.userId) return this.ready()
+    // Meteor._sleepForMs(200000)
+    return Meteor.users.find({ _id: this.userId }, {
+      fields: {
+        services: false
+      }
+    })
+  })
+  // todo
+  Meteor.publish('collections.global', function () {
+    if (!this.userId) return this.ready()
+    return this.ready()
+  })
+}
+/Users/monsterstep/dev/repos/dashboard-app-maker/imports/core/domains/exports.js
+export { default as defaultUsersFields } from './users/fields'
+/Users/monsterstep/dev/repos/dashboard-app-maker/imports/core/domains/index.js
+import {
+  defaultDomainFiles,
+} from '/imports/default'
+import {
+  defaultDomainUsersFields
+} from './exports'
+import {
+  mergeUnionByKey,
+} from '/imports/utils'
+export default app => {
+  if (app.enableFiles)
+    app.domains.push(defaultDomainFiles)
+  _.each(app.domains, domain => {
+    if (domain.isUsers) {
+      domain.collection = Meteor.users
+      domain.fields = mergeUnionByKey(domain.fields, defaultDomainUsersFields, 'name')
+    }
+  })
+}
+/Users/monsterstep/dev/repos/dashboard-app-maker/imports/core/domains/users/fields.js
+export default [
+  {
+    label: '用户名',
+    name: 'username',
+    type: String,
+    tab: '账号',
+  },
+  {
+    label: '密码',
+    name: 'password',
+    type: String,
+    onGrid: false,
+    tab: '账号',
+  },
+  {
+    label: '不允许登录',
+    name: 'isDisabled',
+    type: Boolean,
+    tab: '账号',
+  },
+]
